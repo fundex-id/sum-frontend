@@ -8,11 +8,10 @@ import InvoiceStatusBadge from '../badge/InvoiceStatusBadge';
 import { formatDate } from '../../../../utils/date';
 import { RepaymentSecurityWithSinkingFundResponse } from '../../dtos/repayment-security.dto';
 import Penalty from '../../../../components/ui/Penalty';
-import { ScheduleType } from '../../../repayment-schedule/types/repayment-schedule.enum';
+import { InvoiceStatus, ScheduleType } from '../../../repayment-schedule/types/repayment-schedule.enum';
 import { Big } from 'big.js';
 import { toSafeBig } from '../../../../utils/number';
-import { InvoiceStatus } from '../../types/repayment-security.enum';
-import { InvoiceInfo, InvoiceSummary } from '../../../repayment-schedule/types/repayment-schedule.type';
+import { InvoiceInfo } from '../../../repayment-schedule/types/repayment-schedule.type';
 
 interface RepaymentScheduleTableProps {
   repaymentSecurity: RepaymentSecurityWithSinkingFundResponse;
@@ -122,6 +121,8 @@ export default function SchedulePanel({
       scheduleDate: row.scheduleDate || '',
 
       invoiceNumber: row.invoiceNumber || null,
+      invoiceSequence: row.invoiceSequence ?? 0,
+      invoiceDocumentUrl: row.invoiceDocumentUrl || null,
       invoiceSentTrial: row.invoiceSentTrial ?? 0,
       invoiceDate: row.invoiceDate || null,
       invoiceStatus: row.invoiceStatus || null,
@@ -133,11 +134,16 @@ export default function SchedulePanel({
     .sort((a, b) => a.scheduleSequence - b.scheduleSequence)
     .map(row => ({
       id: row.id,
+
       repaymentSecurityId: row.repaymentSecurityId,
+
       scheduleType: row.scheduleType || null,
       scheduleSequence: row.scheduleSequence,
       scheduleDate: row.scheduleDate || '',
+
       invoiceNumber: row.invoiceNumber || null,
+      invoiceSequence: row.invoiceSequence ?? 0,
+      invoiceDocumentUrl: row.invoiceDocumentUrl || null,
       invoiceSentTrial: row.invoiceSentTrial ?? 0,
       invoiceDate: row.invoiceDate || null,
       invoiceStatus: row.invoiceStatus || null,

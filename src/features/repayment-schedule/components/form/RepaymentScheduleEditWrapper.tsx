@@ -135,7 +135,7 @@ export default function RepaymentScheduleEditWrapper({ scheduleId, repaymentSecu
       closePanel(); // Langsung tutup side panel setelah berhasil
 
       //Navigate
-      navigate('/dashboard/repayment/'+repaymentSecurity.id, { 
+      navigate('/repayment/securities/'+repaymentSecurity.id, { 
         replace: true, 
         // state: { message: 'Data berhasil dihapus!' } 
       });

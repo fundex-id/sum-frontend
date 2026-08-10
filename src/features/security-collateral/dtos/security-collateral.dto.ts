@@ -1,115 +1,19 @@
-// src/modules/security-collateral/dtos/security-collateral.dto.ts
+import { SecurityCollateralAuditTrail, SecurityCollateralID, SecurityCollateralInfo, SecurityCollateralParent, SecurityCollateralVerificationAll } from "../types/security-collateral.type";
 
-import { CollateralStatus, VerificationStatus } from "../types/security-collateral.enum";
-
-export interface SecurityCollateralItemResponse {
-    id: string;
-    repaymentSecurityId: string;
-    collateralType: string;
-    collateralDescription: string | null;
-    collateralValueEstimated: string; // Kolom keuangan dikirim/diterima sebagai string
-    collateralStatus: CollateralStatus | null | '';
-    executionTime: string | null;
-    documentUrl: string | null;
-  
-    // Tab Verifikasi Dokumen
-    verificationDocumentStatus: VerificationStatus | null | '';
-    verificationDocumentNotes: string | null;
-    verificationDocumentBy: string | null;
-    verificationDocumentAt: string | null;
-  
-    // Tab Verifikasi Lapangan (Field)
-    verificationFieldStatus: VerificationStatus | null | '';
-    verificationFieldNotes: string | null;
-    verificationFieldBy: string | null;
-    verificationFieldAt: string | null;
-  
-    // Tab Verifikasi Legal
-    verificationLegalStatus: VerificationStatus | null | '';
-    verificationLegalNotes: string | null;
-    verificationLegalBy: string | null;
-    verificationLegalAt: string | null;
-  
-    // Tab Verifikasi Nilai (Value)
-    verificationValueStatus: VerificationStatus | null | '';
-    verificationValueNotes: string | null;
-    verificationValueBy: string | null;
-    verificationValueAt: string | null;
-  
-    // Audit Trails
-    createdBy: string;
-    createdAt: string;
-    updatedBy: string;
-    updatedAt: string;
-    deletedBy: string | null;
-    deletedAt: string | null;
-  }
+export interface SecurityCollateralItemResponse 
+extends SecurityCollateralID,
+    SecurityCollateralParent,
+    SecurityCollateralInfo,
+    SecurityCollateralVerificationAll {}
   
 
-export interface SecurityCollateralFormRequest {
-    repaymentSecurityId: string;
-    collateralType: string;
-    collateralDescription: string;
-    collateralValueEstimated: string;
-    collateralStatus: string;
-    executionTime: string | null;
-    documentUrl: File | string | null; 
-    
-    // Group Dokumen
-    verificationDocumentStatus: string;
-    verificationDocumentNotes: string;
-    verificationDocumentBy: string;
-    verificationDocumentAt: string;
-    
-    // Group Lapangan
-    verificationFieldStatus: string;
-    verificationFieldNotes: string;
-    verificationFieldBy: string;
-    verificationFieldAt: string;
-    
-    // Group Legal
-    verificationLegalStatus: string;
-    verificationLegalNotes: string;
-    verificationLegalBy: string;
-    verificationLegalAt: string;
-    
-    // Group Nilai
-    verificationValueStatus: string;
-    verificationValueNotes: string;
-    verificationValueBy: string;
-    verificationValueAt: string;
-  }
+export interface SecurityCollateralFormRequest 
+extends SecurityCollateralParent,
+    SecurityCollateralInfo,
+    SecurityCollateralVerificationAll {}
   
-  export interface SecurityCollateralEditFormResponse {
-    id: string;
-    repaymentSecurityId: string;
-    collateralType: string;
-    collateralDescription: string;
-    collateralValueEstimated: string;
-    collateralStatus: string;
-    executionTime: string | null;
-    documentUrl: string;
+  export interface SecurityCollateralEditFormResponse 
+extends SecurityCollateralParent,
+    SecurityCollateralInfo,
+    SecurityCollateralVerificationAll {}
   
-    verificationDocumentStatus: string;
-    verificationDocumentNotes: string;
-    verificationDocumentBy: string;
-    verificationDocumentAt: string;
-    
-    verificationFieldStatus: string;
-    verificationFieldNotes: string;
-    verificationFieldBy: string;
-    verificationFieldAt: string;
-    
-    verificationLegalStatus: string;
-    verificationLegalNotes: string;
-    verificationLegalBy: string;
-    verificationLegalAt: string;
-    
-    verificationValueStatus: string;
-    verificationValueNotes: string;
-    verificationValueBy: string;
-    verificationValueAt: string;
-    
-    createdAt: string;
-    updatedAt: string;
-  }

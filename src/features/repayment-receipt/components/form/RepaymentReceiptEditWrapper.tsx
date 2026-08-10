@@ -74,7 +74,7 @@ export default function RepaymentReceiptEditWrapper({ receiptId, invoiceSummary,
 
   }, [receiptId]);
 
-  const handleEditSubmit = async (formData: any) => {
+  const handleEditSubmit = async (formData: RepaymentReceiptFormRequest) => {
     setIsSubmitting(true);
     setSubmissionError(null); 
 

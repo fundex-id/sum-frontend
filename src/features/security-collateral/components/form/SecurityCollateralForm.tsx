@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { SecurityCollateralFormRequest } from '../../dtos/security-collateral.dto';
 import { CollateralType, CollateralStatus, VerificationStatus } from '../../types/security-collateral.enum';
 
 // Sesuaikan path import komponen UI di bawah ini dengan struktur folder Anda
-import { NumericInput, FormGroup, ConfirmModal, Select, Input, NumberField, Toggle, TextArea } from '../../../../components/forms/index';
+import { NumericInput, FormGroup, ConfirmModal, Select, Input, NumberField, Toggle, TextArea, FormFooter, FormHeader, FileInput } from '../../../../components/forms/index';
 import { formatDateForInput } from '../../../../utils/date';
+import { LoadingForm } from '../../../../components/forms/LoadingForm';
+import { useSidePanel } from '../../../../contexts/SidePanelContext';
+import { FieldValidationConfig, validateFormFields } from '../../../../utils/form';
+import { DeleteDataSection } from '../../../../components/forms/DeleteDataSection';
 
 type TabType = 'document' | 'legal' | 'field' | 'value';
 
@@ -12,13 +16,28 @@ interface SecurityCollateralFormProps {
   mode: 'add' | 'edit';
   initialData: SecurityCollateralFormRequest;
   onSubmit: (data: SecurityCollateralFormRequest) => void;
-  isLoading?: boolean;
+  onCancel: () => void;
+  onDelete?: () => void;
+  isLoading: boolean;
+  submissionError?: string | null; 
 }
 
-export default function SecurityCollateralForm({ mode, initialData, onSubmit, isLoading }: SecurityCollateralFormProps) {
+export default function SecurityCollateralForm({ mode, initialData, onSubmit, onCancel, onDelete, isLoading, submissionError }: SecurityCollateralFormProps) {
+  const { closePanel } = useSidePanel();
   const [formData, setFormData] = useState<SecurityCollateralFormRequest>(initialData);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+  const [validationError, setValidationError] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]); 
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const oldFile = useRef(formData.documentUrl ? String(formData.documentUrl) : undefined);
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [activeTab, setActiveTab] = useState<TabType>('document'); // State untuk fitur Tab
+
+  const isEditMode = mode === 'edit';
 
   const handleChange = (field: keyof SecurityCollateralFormRequest, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -30,46 +49,86 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsConfirmModalOpen(true);
+
+    if (isDeleting){
+      setShowConfirmModal(true);
+    } else {
+      // Panggil fungsi validasi
+      const isValid = validateForm();
+      
+      // Jika valid, baru tampilkan modal konfirmasi
+      if (isValid) {
+        setShowConfirmModal(true);
+      }
+    }
   };
 
-  const confirmSubmit = () => {
-    setIsConfirmModalOpen(false);
-    onSubmit(formData);
+  const handleConfirmSubmit = () => {
+    setShowConfirmModal(false);
+    if (isDeleting && onDelete) {
+      onDelete();
+    } else {
+      onSubmit(formData);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const requiredFields: FieldValidationConfig<typeof formData>[] = [
+      { key: 'collateralType', label: 'Tipe Kolateral', type:'select' }, 
+      { key: 'collateralStatus', label: 'Status Kolateral', type: 'select' },
+      { key: 'collateralDescription', label: 'Deskripsi Kolateral', type: 'textarea' },
+      { key: 'collateralValueEstimated', label: 'Estimasi Nilai Kolateral', type: 'numeric-input' },
+    ];
+  
+    const { isValid, missingFields, missingKeys } = validateFormFields(formData, requiredFields);
+  
+    if (!isValid) {
+      setValidationError(`Silakan lengkapi: ${missingFields.join(', ')}`);
+      setValidationErrors(missingKeys);
+      return false;
+    }
+  
+    setValidationError('');
+    setValidationErrors([]);
+    return true;
+  };
+
+  const isError = (field: keyof SecurityCollateralFormRequest) => {
+    return validationErrors.includes(field)
   };
 
   // Helper untuk me-render Group Verifikasi secara dinamis sesuai active tab
   const renderVerificationGroup = (group: 'Document' | 'Legal' | 'Field' | 'Value', title: string) => (
     <FormGroup title={`Verifikasi ${title}`} colRatio="1:1">
       <Input 
-        label="Waktu Verifikasi" 
-        type="date" 
-        value={formatDateForInput(formData[`verification${group}At` as keyof SecurityCollateralFormRequest] || '')} 
+        label={`Waktu Verifikasi ${title}`}
+        type="date" name={`verification${group}At`}
+        value={formatDateForInput(formData[`verification${group}At` as keyof SecurityCollateralFormRequest] || 'SUBMITTED')} 
         onChange={(e: any) => handleChange(`verification${group}At` as keyof SecurityCollateralFormRequest, e.target.value)} 
       />
   
       <Input 
-        label="Diverifikasi Oleh" 
-        type="text" 
+        label={`Diverifikasi ${title} oleh`}
+        type="text" name={`verification${group}By`}
         value={formData[`verification${group}By` as keyof SecurityCollateralFormRequest] || ''} 
         onChange={(e: any) => handleChange(`verification${group}By` as keyof SecurityCollateralFormRequest, e.target.value)} 
       />
       <Select 
-        label="Status Verifikasi" 
+        label={`Status Verifikasi ${title}`}
+        name={`verification${group}Status`}
         value={formData[`verification${group}Status` as keyof SecurityCollateralFormRequest] || ''} 
         onChange={(e: any) => handleChange(`verification${group}Status` as keyof SecurityCollateralFormRequest, e.target.value)}
       >
-        <option value="">-- Pilih Status --</option>
         {Object.values(VerificationStatus).map(status => (
           <option key={status} value={status}>{status.replace(/_/g, ' ')}</option>
         ))}
       </Select>
 
       <TextArea 
-        label="Catatan" 
-        colSpan="1" 
+        label={`Catatan Verifikasi ${title}`}
+        colSpan="1" name={`verification${group}Notes`}
         value={formData[`verification${group}Notes` as keyof SecurityCollateralFormRequest] || ''} 
         onChange={(e: any) => handleChange(`verification${group}Notes` as keyof SecurityCollateralFormRequest, e.target.value)} 
       />
@@ -78,13 +137,26 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
 
   return (
     <>
-      <form onSubmit={handleFormSubmit} className="flex flex-col h-full bg-white">
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <form className="flex flex-col h-full bg-white">
+        {/* Header */}
+        <FormHeader 
+          title={isEditMode ? 'Edit Kolateral' : 'Catat Kolateral Baru'}
+          subtitle={isEditMode 
+              ? 'Ubah data kolateral di bawah ini dengan benar.' 
+              : 'Lengkapi data kolateral di bawah ini dengan benar.'}
+          />
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="relative space-y-8 transition-all duration-300 px-8 pb-8 mt-4">
+
+          {isDeleting && (
+                <div className="absolute inset-y-[-30px] inset-x-[0px] z-10 bg-white opacity-65 bcursor-not-allowed" />
+              )}
           
           {/* BAGIAN INFORMASI UTAMA: TIDAK ADA YANG DIUBAH */}
-          <FormGroup title="Informasi Utama Kolateral" colRatio="1:1">
+          <FormGroup title="INFORMASI KOLATERAL" colRatio="1:1">
             <Select 
-              label="Tipe Kolateral" 
+              label="Tipe Kolateral" name="collateralType"
+              hasError={isError('collateralType')}
               value={formData.collateralType} 
               onChange={(e: any) => handleChange('collateralType', e.target.value)}
             >
@@ -94,7 +166,8 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
               ))}
             </Select>
             <Select 
-              label="Status Kolateral" 
+              label="Status Kolateral" name="collateralStatus"
+              hasError={isError('collateralStatus')}
               value={formData.collateralStatus} 
               onChange={(e: any) => handleChange('collateralStatus', e.target.value)}
             >
@@ -105,18 +178,20 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
             </Select>
 
             <div className="col-span-2">
-              <label className="block text-[10px] font-semibold text-slate-600 mb-1">
-                Upload Dokumen (PDF/JPG/PNG)
-              </label>
-              {/* <input 
-                type="file" 
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => setFormData({
-                  ...formData, 
-                  documentUrl: e.target.files ? e.target.files[0] : null
-                })}
-                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 border border-slate-200 rounded-md"
-              /> */}
+              <FileInput 
+                  label="Dokumen Bukti Pembayaran"
+                  colSpan="2" name="receiptDocumentUrl"
+                  hasError={false} // Ubah ke true jika validasi gagal
+                  oldFile={oldFile.current}
+                  allowedTypes={['.pdf','.png','.jpg','.gif','.jpeg']} // Hanya izinkan tipe ini
+                  maxSizeMb={5} // Maksimal 2MB (jika diabaikan, otomatis 5MB)
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                    setFormData({
+                      ...formData, 
+                      documentUrl: e.target.files ? e.target.files[0] : null
+                    })
+                  }
+                />
               
               {/* Link ini akan tetap muncul jika formData.documentUrl berisi string URL (biasanya saat mode Edit mengambil dari database) */}
               {typeof formData.documentUrl === 'string' && formData.documentUrl !== '' && (
@@ -130,14 +205,15 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
             </div>
             
             <TextArea 
-              label="Deskripsi Kolateral" 
-              colSpan="2" 
+              label="Deskripsi Kolateral" name="collateralDescription"
+              hasError={isError('collateralDescription')} colSpan="2" 
               value={formData.collateralDescription || ''} 
               onChange={(e: any) => handleChange('collateralDescription', e.target.value)} 
               placeholder="Jelaskan kondisi, letak, ukuran, dll..." 
             />
             <NumberField 
-              label="Estimasi Nilai Kolateral" 
+              label="Estimasi Nilai Kolateral" name="collateralValueEstimated"
+              hasError={isError('collateralValueEstimated')}
               value={Number(formData.collateralValueEstimated)} 
               onValueChange={(val: number) => handleChange('collateralValueEstimated', val.toString())} 
             />
@@ -184,32 +260,33 @@ export default function SecurityCollateralForm({ mode, initialData, onSubmit, is
             {activeTab === 'value' && renderVerificationGroup('Value', 'Nilai')}
           </div>
 
+          </div>
+
+          {isEditMode && (<DeleteDataSection isDeleting={isDeleting} onDeleting={setIsDeleting}/>)}
+
         </div>
 
-        <div className="border-t border-slate-200 p-4 bg-slate-50 flex justify-end gap-3 shrink-0">
-          <button 
-            type="button" 
-            className="px-4 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-          >
-            Batal
-          </button>
-          <button 
-            type="submit" 
-            disabled={isLoading}
-            className="px-4 py-2 text-xs font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 transition-colors disabled:opacity-50"
-          >
-            {isLoading ? 'Menyimpan...' : (mode === 'edit' ? 'Simpan Perubahan' : 'Tambahkan Kolateral')}
-          </button>
-        </div>
+          <FormFooter 
+          mode={mode}
+          validationError={validationError}
+          submissionError={submissionError}
+          handlePreSubmit={handlePreSubmit}
+          isLoading={isLoading}
+          isDeleting={isDeleting}
+          closePanel={closePanel}
+          />
+
+          <ConfirmModal 
+            isOpen={showConfirmModal} 
+            onClose={() => setShowConfirmModal(false)} 
+            onConfirm={handleConfirmSubmit} 
+            mode={isDeleting?'delete':mode}
+          />
+
+         <LoadingForm isLoading={isLoading} />
       </form>
 
-      <ConfirmModal 
-        isOpen={isConfirmModalOpen} 
-        onClose={() => setIsConfirmModalOpen(false)}
-        onConfirm={confirmSubmit}
-        title="Konfirmasi Penyimpanan"
-        message="Apakah Anda yakin ingin menyimpan data kolateral ini?"
-      />
+      
     </>
   );
 }

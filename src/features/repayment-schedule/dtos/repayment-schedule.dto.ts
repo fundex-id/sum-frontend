@@ -51,6 +51,20 @@ extends RepaymentScheduleID,
 
   export interface RepaymentScheduleItemWithPenaltyResponse 
   extends RepaymentScheduleDetailWithPenaltyResponse {}
-    
+
+  export interface RepaymentScheduleCalendar extends 
+  RepaymentScheduleID, 
+  RepaymentScheduleParent, 
+  RepaymentScheduleInfo, 
+  RepaymentScheduleInvoiceInfo,
+  Pick<RepaymentScheduleInvoiceFee, 'invoiceTotalWithTax'> {
+  
+  // -- Join fields dari tabel REPAYMENT_SECURITY --
+  investeeName: string;
+  investeeNameLegal: string;
+  securityCode: string;
+  
 }
+    
+
 

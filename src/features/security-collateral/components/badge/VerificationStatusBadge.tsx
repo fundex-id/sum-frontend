@@ -30,7 +30,7 @@ export default function VerificationStatusBadge({ status, size = 'md' }: Verific
   };
 
   const colorStyles = getStatusStyle(status);
-  const displayStatus = status ? status.replace(/_/g, ' ') : 'UNKNOWN';
+  const displayStatus = status ? status.replace(/_/g, ' ') : '-';
 
   return (
     <span className={`${baseStyles} ${sizeStyles[size]} ${colorStyles}`}>

@@ -98,9 +98,31 @@ export default function SecurityCollateralPage() {
     loadInitialData();
   }, [repaymentId, fetchSecurityCollaterals, fetchRepaymentSecurity]);
 
-  if (isLoading) return <div className="p-6 text-slate-500 font-medium">Memuat data agunan...</div>;
-  if (error) return <div className="p-6 text-red-500 font-medium">Error: {error}</div>;
-  if (!repaymentSecurity) return null;
+  if (isLoading) {
+    return (
+      <div className="mt-20 flex h-64 items-center justify-center">
+        <div className="animate-pulse text-sm font-medium text-slate-400">
+          Memuat data agunan...
+        </div>
+      </div>
+    );
+  }
+  
+  // 2. Error State (Menggunakan Box Alert Berwarna Rose/Merah)
+  if (error) {
+    return (
+      <div className="mt-20 rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-medium text-rose-600">
+        <span>⚠️ Terjadi kesalahan: {error}</span>
+      </div>
+    );
+  }
+  
+  // 3. Empty State (Mengembalikan null jika data tidak ditemukan)
+  if (!repaymentSecurity) {
+    <div className="mt-20 p-8 text-center text-slate-500 font-medium">
+      ⚠️ Data tidak ditemukan.
+    </div>
+  }
 
   const underlyingFund = toSafeBig(repaymentSecurity.contractUnderlyingFund)
   const totalCollateralValue = toSafeBig(collaterals.reduce((sum, item) => sum + Number(item.collateralValueEstimated || 0), 0));
@@ -135,19 +157,18 @@ export default function SecurityCollateralPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-24 pb-8 px-4 md:px-8">
+    <div className="min-h-screen bg-slate-50 pt-16 pb-8 px-4 md:px-8">
       <div className="max-w-6xl mx-auto space-y-4">
         
         {/* Header Breadcrumb & Title */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-lg font-bold text-slate-900">Daftar Jaminan (Collaterals)</h1>
+            <h1 className="text-lg font-bold text-slate-800">DAFTAR JAMINAN (KOLATERAL)</h1>
             <p className="text-xs text-slate-500 mt-1">Kelola dan monitor aset jaminan untuk fasilitas pendanaan</p>
           </div>
-          <Link to={`/dashboard/repayment/schedules/${repaymentId}`} className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-            &larr; Kembali
-          </Link>
+       
         </div>
+        
 
         {/* Kontainer 1: Ringkasan Informasi Penerbit */}
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4">
@@ -155,7 +176,7 @@ export default function SecurityCollateralPage() {
             <div className="w-1/6 flex flex-col">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Penerbit</span>
               <span className="text-sm font-bold text-slate-800">{repaymentSecurity.investeeName}</span>
-              <span className="text-[10px] text-slate-500 mt-0.5">{repaymentSecurity.investeeName}</span>
+              <span className="text-[10px] text-slate-500 mt-0.5">{repaymentSecurity.investeeNameLegal}</span>
             </div>
             <div className="w-2/6 flex flex-col">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Efek</span>
@@ -175,7 +196,7 @@ export default function SecurityCollateralPage() {
             </div>
             <div className="w-1/6 flex flex-col text-right">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">(%) Coverage</span>
-              <div className="mt-0.5 text-right">
+              <div className="text-md font-bold text-slate-800 text-right">
                 {/* <div>{formatRupiah(underlyingFund)}</div>
                 <div>{formatRupiah(totalCollateralValue)}</div> */}
                 <div>{formatPercentage(coverageRate, 'zero')}</div>
@@ -264,22 +285,26 @@ export default function SecurityCollateralPage() {
                         {/* 6. Kolom View Dokumen (Diganti Ikon Mata Standard) */}
                         <td className="py-4 px-4 align-top text-center">
                           <div className="mt-0.5 flex justify-center">
-
-                              <a 
-                                href={item.documentUrl ?? undefined} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="inline-flex items-center justify-center p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors" 
-                                title="Lihat Dokumen"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                              </a>
-
+                            <a 
+                              href={item.documentUrl ?? "#"} 
+                              target={item.documentUrl ? "_blank" : undefined} 
+                              rel="noopener noreferrer" 
+                              className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
+                                item.documentUrl 
+                                  ? "bg-blue-50 text-blue-600 hover:bg-blue-100" 
+                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              }`}
+                              title={item.documentUrl ? "Lihat Dokumen" : "Dokumen Tidak Tersedia"}
+                              onClick={(e) => !item.documentUrl && e.preventDefault()} // Mencegah scroll ke atas jika klik '#'
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </a>
                           </div>
                         </td>
+
                         
                         {/* 7. Kolom Edit */}
                         {isEditMode && (

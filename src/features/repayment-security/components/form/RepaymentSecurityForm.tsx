@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSidePanel } from '../../../../contexts/SidePanelContext';
 import { RepaymentSecurityFormRequest, SecurityLookupResponse } from '../../dtos/repayment-security.dto';
-import { ContractStatus } from '../../types/repayment-security.enum';
+import { ContractStatus, SecurityContract } from '../../types/repayment-security.enum';
 import { Big } from 'big.js'; 
 import { FormGroup, ConfirmModal, Select, Input, NumberField, Toggle, FormFooter, FormHeader} from '../../../../components/forms/index';
 import { toSafeBig } from '../../../../utils/number';
@@ -253,6 +253,9 @@ const durationBig = new Big(duration.toString());
         investeeIconUrl: item.investeeIconUrl,
         securityId: item.securityId,
         securityType: item?.securityType || null,
+        securityContract: Object.values(SecurityContract).includes(item?.securityContract as SecurityContract)
+                          ? (item.securityContract as SecurityContract)
+                          : SecurityContract.UNSPECIFIED,
         securityName: item.securityName, 
         securityCode: item.securityCode,
         securitySeries: item.securitySeries,
@@ -464,12 +467,13 @@ const durationBig = new Big(duration.toString());
               </Select>
               <Input label="Nama Penerbit" name="investeeName" disabled value={formData.investeeName} />
               <Input label="Nama Legal Penerbit" name="investeeNameLegal" disabled value={formData.investeeNameLegal} />
-              <Input label="Kode Efek" name="securityCode" disabled value={formData.securityCode} />
               <Input label="Tipe efek" name="securityType" disabled value={formData.securityType} />
+              <Input label="Kontrak Efek" name="securityContract" disabled value={formData.securityContract} />
+              <Input label="Kode Efek" name="securityCode" disabled value={formData.securityCode} />
               <Input label="Squence" name="securitySequence" disabled value={formData.securitySequence} />
               <Input label="Series" name="securitySeries" disabled value={formData.securitySeries} />
               <Input label="Phase" name="securityPhase" disabled value={formData.securityPhase} />
-              <Input label="Icon URL" name="investeeIconUrl" disabled value={formData.investeeIconUrl} />
+             
               
             </FormGroup>
 

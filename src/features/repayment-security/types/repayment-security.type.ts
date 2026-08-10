@@ -1,4 +1,4 @@
-import { ContractStatus, SecurityType } from "./repayment-security.enum";
+import { ContractStatus, SecurityContract, SecurityType } from "./repayment-security.enum";
 
 // 1. Grup Identitas & Relasi (Sering dipakai untuk Dropdown, Card, atau List Ringkas)
 
@@ -14,6 +14,7 @@ export interface RepaymentSecurityIdentity {
   investeeNameLegal: string;
   investeeIconUrl: string | null;
   securityType: SecurityType | null | '';
+  securityContract: SecurityContract | null | '';
   securityName: string;
   securityCode: string;
   securitySeries: number | null;
@@ -69,6 +70,11 @@ export interface RepaymentSecurityDocuments {
   contractDocumentTitle: string | null;
   contractDocumentNumber: string | null;
   contractDocumentUrl: File | string | null;
+}
+
+export interface RepaymentSecurityFundPaid {
+  paidYieldAmount: string;
+  paidSinkingFund: string;
 }
 
 // 7. Grup Informasi Restrukturisasi (Opsional)

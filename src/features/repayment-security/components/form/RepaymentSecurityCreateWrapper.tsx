@@ -5,6 +5,7 @@ import { repaymentSecurityService } from '../../services/repaymentSecurityServic
 import { RepaymentSecurityFormRequest } from '../../dtos/repayment-security.dto';
 import { SecurityType } from '../../types/repayment-security.enum';
 import { mapDtoToFormData } from '../../../../utils/form';
+import { toSafeBig } from '../../../../utils/number';
 
 export interface RepaymentSecurityCreateWrapperProps {
   onSuccess?: () => void;
@@ -79,10 +80,19 @@ export default function RepaymentSecurityCreateWrapper({onSuccess}: RepaymentSec
     setIsSubmitting(true);
     setSubmissionError(null); 
 
+    const precisionPct = 4;
+
     const payloadData : RepaymentSecurityFormRequest = {
       ...formData,
       securityType: formData.securityType === '' ? null : formData.securityType,
       contractStatus: formData.contractStatus === '' ? null : formData.contractStatus,
+
+      contractYieldRateAnnually: toSafeBig(formData.contractYieldRateAnnually).div(100).round(precisionPct).toString(),
+      contractFeeAdministrationPercentage: toSafeBig(formData.contractFeeAdministrationPercentage).div(100).round(precisionPct).toString(),
+      contractFeeProvisionPercentage: toSafeBig(formData.contractFeeProvisionPercentage).div(100).round(precisionPct).toString(),
+      contractFeePlatformPercentage: toSafeBig(formData.contractFeePlatformPercentage).div(100).round(precisionPct).toString(),
+      contractFeeServicingPercentage: toSafeBig(formData.contractFeeServicingPercentage).div(100).round(precisionPct).toString(),
+      contractFeeMonitoringPercentageMonthly: toSafeBig(formData.contractFeeMonitoringPercentageMonthly).div(100).round(precisionPct).toString(),
 
       contractEscrowBank: formData.contractEscrowBank === '' ? null : formData.contractEscrowBank,
       contractEscrowAccount: formData.contractEscrowAccount === '' ? null : formData.contractEscrowAccount,

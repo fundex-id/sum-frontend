@@ -7,6 +7,7 @@ import { RepaymentSecurityEditFormResponse, RepaymentSecurityFormRequest } from 
 import { formatDateForInput } from '../../../../utils/date';
 import { Big } from 'big.js';
 import { mapDtoToFormData } from '../../../../utils/form';
+import { toSafeBig } from '../../../../utils/number';
 
 interface EditWrapperProps {
   repaymentId: string;
@@ -137,10 +138,20 @@ export default function RepaymentSecurityEditWrapper({ repaymentId, onSuccess }:
     setIsSubmitting(true);
     setSubmissionError(null); 
 
+    const precisionPct = 4;
+
     const payloadData : RepaymentSecurityFormRequest = {
       ...formData,
       securityType: formData.securityType === '' ? null : formData.securityType,
       contractStatus: formData.contractStatus === '' ? null : formData.contractStatus,
+
+      contractYieldRateAnnually: toSafeBig(formData.contractYieldRateAnnually).div(100).round(precisionPct).toString(),
+      contractFeeAdministrationPercentage: toSafeBig(formData.contractFeeAdministrationPercentage).div(100).round(precisionPct).toString(),
+      contractFeeProvisionPercentage: toSafeBig(formData.contractFeeProvisionPercentage).div(100).round(precisionPct).toString(),
+      contractFeePlatformPercentage: toSafeBig(formData.contractFeePlatformPercentage).div(100).round(precisionPct).toString(),
+      contractFeeServicingPercentage: toSafeBig(formData.contractFeeServicingPercentage).div(100).round(precisionPct).toString(),
+      contractFeeMonitoringPercentageMonthly: toSafeBig(formData.contractFeeMonitoringPercentageMonthly).div(100).round(precisionPct).toString(),
+
 
       contractEscrowBank: formData.contractEscrowBank === '' ? null : formData.contractEscrowBank,
       contractEscrowAccount: formData.contractEscrowAccount === '' ? null : formData.contractEscrowAccount,
@@ -196,7 +207,7 @@ export default function RepaymentSecurityEditWrapper({ repaymentId, onSuccess }:
       closePanel();
       // 2. Kirim pesan sukses ke halaman list menggunakan state (opsional)
       // 3. Redirect ke halaman list dengan opsi 'replace: true'
-      navigate('/dashboard/repayment', { 
+      navigate('/repayment/securities', { 
         replace: true, 
         // state: { message: 'Data berhasil dihapus!' } 
       });

@@ -46,13 +46,13 @@ export default function CollateralPanel({ securityCollaterals }: CollateralPanel
                   <tr className="bg-slate-50 text-[9px] text-slate-500 uppercase tracking-wider border-y border-slate-200">
 
                     <th className="w-8 py-2 px-2 font-bold">No</th>  
-                    <th className="py-2 px-2 font-bold">Tipe</th>
-                    <th className="py-2 px-2 font-bold text-left">Estimasi Nilai</th>
+                    <th className="w-24 py-2 px-2 font-bold">Tipe</th>
+                    <th className="py-2 px-2 pr-2 font-bold text-center">Estimasi Nilai</th>
                     <th className="w-8 py-2 px-2 font-bold text-center" title="Verifikasi Dokumen">Dok</th>
                     <th className="w-8 py-2 px-2 font-bold text-center" title="Verifikasi Legal">Leg</th>
                     <th className="w-8 py-2 px-2 font-bold text-center" title="Verifikasi Nilai">Nil</th>
                     <th className="w-8 py-2 px-2 font-bold text-center" title="Verifikasi Lapangan">Lap</th>
-                    <th className="py-2 px-0.5 font-bold text-center">Status</th>  
+                    <th className="w-24 py-2 px-0.5 font-bold text-center">Status</th>  
                   </tr>
                 </thead>
                 <tbody className="text-[12px] font-medium text-slate-700 divide-y divide-slate-100">

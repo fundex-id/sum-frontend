@@ -362,7 +362,7 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
               : 'Lengkapi data pembayaran di bawah ini dengan benar. Perhitungan otomatis dilakukan.'}
           />
         
-        <div className="flex-1 overflow-y-auto mx-2 space-y-6">
+        <div className="flex-1 overflow-y-auto mx-2">
 
           <div className="relative space-y-6 transition-all duration-300 px-8 pb-8 mt-4">
 
@@ -531,7 +531,6 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
 
         </div>
 
-        
 
 
         {/* FOOTER: Fixed di Bawah */}

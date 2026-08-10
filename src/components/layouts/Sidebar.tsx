@@ -32,9 +32,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         </svg>
       ),
       subMenus: [
-        { name: 'Daftar Penerbit', path: '/dashboard/repayment' },
-        { name: 'Jadwal Pembayaran', path: '/dashboard/repayment/schedules' },
-        { name: 'Riwayat Receipt', path: '/dashboard/repayment/receipts' },
+        { name: 'Daftar Penerbit', path: '/repayment/securities' },
+        { name: 'Jadwal Pembayaran', path: '/repayment/calendar' },
+        { name: 'Riwayat Pembayaran', path: '/repayment/receipts' },
       ]
     },
     // { 

@@ -39,7 +39,7 @@ export default function RepaymentDashboardPage() {
 
       setBreadcrumbs([
         { label: 'DASHBOARD', path: '/dashboard/monitoring' },
-        { label: 'REPAYMENT', path: '/dashboard/repayment' },
+        { label: 'REPAYMENT', path: '/repayment/securities' },
       ]);
       
     } catch (err: any) {
@@ -145,7 +145,7 @@ export default function RepaymentDashboardPage() {
       {/* KONDISI ERROR */}
       {error && (
         <div className="bg-rose-50 p-4 rounded-xl border border-rose-200 text-sm text-rose-600 font-medium flex items-center justify-center">
-          ⚠️ {error}
+          ⚠️ Terjadi kesalahan:  {error}
         </div>
       )}
 

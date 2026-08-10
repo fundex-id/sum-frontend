@@ -96,10 +96,10 @@ export default function RepaymentDetailPage() {
         if (repaymentRes) {
           setBreadcrumbs([
             { label: 'DASHBOARD', path: '/dashboard/monitoring' },
-            { label: 'REPAYMENT', path: '/dashboard/repayment' },
+            { label: 'REPAYMENT', path: '/repayment/securities' },
             { 
               label: repaymentRes.securityCode ?? 'Detail Repayment', 
-              path: `/dashboard/repayment/${repaymentRes.id}` 
+              path: `/repayment/securities/${repaymentRes.id}` 
             }
           ]);
         }
@@ -121,14 +121,32 @@ export default function RepaymentDetailPage() {
   
 
   // Loading & Error UI Fallback
-  if (loading) return <div className="p-8 text-center">Memuat detail...</div>;
-  if (error) return <div className="p-8 text-center text-rose-500 font-medium">Error: {error}</div>;
-  if (!repaymentSecurity) return <div className="p-8 text-center">Data tidak ditemukan.</div>;
+  // 1. Kondisi Memuat Data (Loading State) dengan Efek Animasi Pulse
+  if (loading) {
+    return (
+      <div className="mt-20 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">
+        Memuat detail data...
+      </div>
+    );
+  }
 
+  // 2. Kondisi Error (Error State)
+  if (error) {
+    return (
+      <div className="mt-20 bg-rose-50 p-4 rounded-xl border border-rose-200 text-sm text-rose-600 font-medium flex items-center justify-center">
+        ⚠️ Terjadi kesalahan: {error}
+      </div>
+    );
+  }
 
-  if (loading) return <div className="pt-20 p-8 text-center text-sm font-medium text-slate-400 animate-pulse">Memuat detail data...</div>;
-  if (error || !repaymentSecurity) return <div className="pt-20 p-8 text-center text-rose-500 font-medium">⚠️ {error}</div>;
-
+  // 3. Kondisi Data Kosong (Empty State)
+  if (!repaymentSecurity) {
+    return (
+      <div className="mt-20 p-8 text-center text-slate-500 font-medium">
+        ⚠️ Data tidak ditemukan.
+      </div>
+    );
+  }
 
   // ===========================================================================
   // DATA PREPARATION & CALCULATIONS

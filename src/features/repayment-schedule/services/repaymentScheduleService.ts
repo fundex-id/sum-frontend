@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ApiResponse } from '../../../types/api.type';
-import { RepaymentScheduleFormRequest, RepaymentScheduleItemWithPenaltyResponse, RepaymentScheduleEditFormResponse, RepaymentScheduleDetailWithAuditResponse, RepaymentScheduleDetailResponse, RepaymentScheduleDetailWithPenaltyResponse } from '../dtos/repayment-schedule.dto';
+import { RepaymentScheduleFormRequest, RepaymentScheduleItemWithPenaltyResponse, RepaymentScheduleEditFormResponse, RepaymentScheduleDetailWithAuditResponse, RepaymentScheduleDetailResponse, RepaymentScheduleDetailWithPenaltyResponse, RepaymentScheduleCalendar } from '../dtos/repayment-schedule.dto';
 
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -51,6 +51,15 @@ export const repaymentScheduleService = {
   },
 
   //LIST
+  // --- CALENDAR SCHEDULES (NEW) ---
+  getRepaymentSchedulesCalendar: async (params?: { startMonth?: number; endMonth?: number }): Promise<ApiResponse<RepaymentScheduleCalendar>> => {
+    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/calendar`, {
+      params,
+    });
+    return response.data;
+  },
+
+
   getRepaymentSchedulesWithPenalty: async (securityId: string): Promise<ApiResponse<RepaymentScheduleItemWithPenaltyResponse>> => {
     // const response = await axios.get(`${BASE_URL}/repayment/securities/${securityId}/schedules`);
 

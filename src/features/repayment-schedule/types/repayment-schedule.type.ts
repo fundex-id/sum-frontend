@@ -21,6 +21,8 @@ export interface RepaymentScheduleInfo {
 export interface RepaymentScheduleInvoiceInfo {
   // Invoice Specifics
   invoiceNumber: string | null;
+  invoiceSequence: number;
+  invoiceDocumentUrl: string | null;
   invoiceSentTrial: number ;
   invoiceDate: string | null; // ISO Date string (YYYY-MM-DD)
   invoiceStatus: InvoiceStatus | null | '';
@@ -83,6 +85,20 @@ export interface RepaymentScheduleInvoiceFeeBig {
   invoiceTotal: Big;
   invoiceTotalTax: Big;
   invoiceTotalWithTax: Big;
+}
+
+export interface RepaymentScheduleInvoicePaid {
+  paidInvoice: string;
+  paidActualLoss: string;
+  paidPenalty: string;
+  paidPenaltyIsSettled: boolean;
+}
+
+export interface RepaymentScheduleInvoicePaidBig {
+  paidInvoice: Big;
+  paidActualLoss: Big;
+  paidPenalty: Big;
+  paidPenaltyIsSettled: boolean;
 }
 
 export interface RepaymentScheduleAuditTrail {

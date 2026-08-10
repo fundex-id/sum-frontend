@@ -99,14 +99,14 @@ export default function RepaymentSchedulePage() {
         if (scheduleRes && repaymentRes) {
           setBreadcrumbs([
             { label: 'DASHBOARD', path: '/dashboard/monitoring' },
-            { label: 'REPAYMENT', path: '/dashboard/repayment' },
+            { label: 'REPAYMENT', path: '/repayment/securities' },
             { 
               label: repaymentRes.securityCode ?? 'DETAIL', 
-              path: `/dashboard/repayment/${repaymentRes.id}` 
+              path: `/repayment/securities/${repaymentRes.id}` 
             },
             { 
               label: `${scheduleRes.scheduleType} ${scheduleRes.scheduleSequence}` ?? 'SCHEDULE', 
-              path: `/dashboard/repayment/${repaymentRes.id}/schedules/${scheduleRes.id}` 
+              path: `/repayment/securities/${repaymentRes.id}/schedules/${scheduleRes.id}` 
             }
           ]);
         }
@@ -165,21 +165,35 @@ export default function RepaymentSchedulePage() {
         .plus(invoiceSummary.invoiceActualLoss)
         .plus(penalty);
   
+  // 1. Loading State
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-sm font-medium text-slate-400 animate-pulse">Memuat rincian jadwal...</div>
+      <div className="mt-20 flex h-64 items-center justify-center">
+        <div className="animate-pulse text-sm font-medium text-slate-400">
+          Memuat rincian jadwal...
+        </div>
       </div>
     );
   }
 
-  if (error || !schedule) {
+  // 2. Error State (Masalah Koneksi / Gagal API)
+  if (error) {
     return (
-      <div className="bg-rose-50 p-4 rounded-xl border border-rose-200 text-sm text-rose-600 font-medium text-center">
-        ⚠️ {error || 'Data rincian jadwal tidak ditemukan.'}
+      <div className="mt-20 rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-medium text-rose-600">
+        <span>⚠️ Terjadi kesalahan: {error}</span>
       </div>
     );
   }
+
+  // 3. Empty State (Koneksi Sukses, tapi Data Memang Kosong)
+  if (!schedule) {
+    return (
+      <div className="mt-20 rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm font-medium text-amber-600">
+        <span>⚠️ Data rincian jadwal tidak ditemukan.</span>
+      </div>
+    );
+  }
+
 
   return (
     <div className="p-6 mt-12 bg-slate-50 min-h-screen text-slate-600">
