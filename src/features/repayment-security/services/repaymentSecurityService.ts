@@ -1,122 +1,96 @@
 // src/features/repayment-security/services/repaymentSecurityService.ts
-import axios from 'axios';
+import { apiPrivate } from '../../../lib/api/apiClient';
 import { ApiResponse } from '../../../types/api.type'
-import { RepaymentSecurityCardResponse, RepaymentSecurityDetailResponse, RepaymentSecurityDetailWithAuditResponse, RepaymentSecurityEditFormResponse, RepaymentSecurityFormRequest, RepaymentSecuritySummaryResponse, RepaymentSecurityWithSinkingFundResponse, SecurityLookupResponse } from '../dtos/repayment-security.dto';
-import * as Big from 'big.js';
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-const REPAYMENT_SECURITY_URL = 'repayment/securities';
-
-// Inisiasi instance Axios untuk mengatur Base URL dan Header secara default
-const apiClient = axios.create({
-  baseURL: `${BASE_URL}/${REPAYMENT_SECURITY_URL}`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import { RepaymentSecurityCardResponse, 
+        RepaymentSecurityDetailResponse, 
+        RepaymentSecurityDetailWithAuditResponse, 
+        RepaymentSecurityEditFormResponse, 
+        RepaymentSecurityFormRequest, 
+        RepaymentSecuritySummaryResponse, 
+        RepaymentSecurityWithSinkingFundResponse, 
+        SecurityLookupResponse } from '../dtos/repayment-security.dto';
+        
+const PREFIX_REPAYMENT_SECURITIES = '/repayment/securities'; 
 
 export type RepaymentMode = 'detail' | 'summary' | 'detail-with-sf'; 
 
 export const repaymentSecurityService = {
   // SECURITY LOOKUP
   getRepaymentSecurityLookup: async (): Promise<ApiResponse<SecurityLookupResponse>> => {
-    const response = await apiClient.get('/lookup');
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/lookup`);
     return response.data;
   },
 
   // DETAIL
   getRepaymentSecurityDetail: async (id: string): Promise<ApiResponse<RepaymentSecurityDetailResponse>> => {
-    const response = await apiClient.get(`/${id}`, {
-      params: {
-        mode: 'detail', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/${id}`, {
+      params: { mode: 'detail' },
     });
     return response.data;
   },
 
   getRepaymentSecurityEditForm: async (id: string): Promise<ApiResponse<RepaymentSecurityEditFormResponse>> => {
-    const response = await apiClient.get(`/${id}`, {
-      params: {
-        mode: 'detail', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/${id}`, {
+      params: { mode: 'detail' },
     });
     return response.data;
   },
 
   getRepaymentSecurityWithSinkingFund: async (id: string): Promise<ApiResponse<RepaymentSecurityWithSinkingFundResponse>> => {
-    const response = await apiClient.get(`/${id}`, {
-      params: {
-        mode: 'detail-with-sf', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/${id}`, {
+      params: { mode: 'detail-with-sf' },
     });
     return response.data;
   },
 
   getRepaymentSecuritySummary: async (id: string): Promise<ApiResponse<RepaymentSecuritySummaryResponse>> => {
-    const response = await apiClient.get(`/${id}`, {
-      params: {
-        mode: 'summary', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/${id}`, {
+      params: { mode: 'summary' },
     });
     return response.data;
   },
 
   getRepaymentSecuritySummary2: async (id: string): Promise<ApiResponse<RepaymentSecuritySummaryResponse>> => {
-    const response = await apiClient.get(`/${id}/summary`);
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}/${id}/summary`);
     return response.data;
   },
 
   // LIST
   getRepaymentSecurityCards: async (): Promise<ApiResponse<RepaymentSecurityCardResponse>> => {
-    const response = await apiClient.get('/');
-    return response.data; 
+    const response = await apiPrivate.get(`${PREFIX_REPAYMENT_SECURITIES}`); // Setara dengan /repayment/securities
+    return response.data;
   },
 
   // CREATE
   createRepaymentSecurity: async (payload: RepaymentSecurityFormRequest | FormData): Promise<RepaymentSecurityDetailWithAuditResponse> => {
+    const isFormData = payload instanceof FormData;
     
-    let response;
-    
-    if (payload instanceof FormData) {
-      response = await apiClient.post('/', payload, {
-        // Kita timpa headers-nya khusus untuk request ini saja
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } else {
-      response = await apiClient.post('/', payload);
-    }
+    // apiPrivate otomatis menggunakan 'application/json'
+    // Tapi kita bisa menimpanya (override) jika mengirim FormData
+    const response = await apiPrivate.post(`${PREFIX_REPAYMENT_SECURITIES}`, payload, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
 
     return response.data;
-    
   },
-
 
   // UPDATE
   updateRepaymentSecurity: async (id: string, payload: RepaymentSecurityFormRequest | FormData): Promise<RepaymentSecurityDetailWithAuditResponse> => {
-    let response;
+    const isFormData = payload instanceof FormData;
     
-    if (payload instanceof FormData) {
-      response = await apiClient.put(`/${id}`, payload, {
-        // Kita timpa headers-nya khusus untuk request ini saja
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } else {
-      response = await apiClient.put(`/${id}`, payload);
-    }
+    const response = await apiPrivate.put(`${PREFIX_REPAYMENT_SECURITIES}/${id}`, payload, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
 
     return response.data;
   },
 
   deleteRepaymentSecurity: async (repaymentSecurityId: string): Promise<RepaymentSecurityDetailWithAuditResponse> => {
-    const response = await apiClient.delete(`/${repaymentSecurityId}`);
+    const response = await apiPrivate.delete(`${PREFIX_REPAYMENT_SECURITIES}/${repaymentSecurityId}`);
     return response.data;
   },
 
-  mapRepaymentSecuritySummaryFromDetail : (
+  mapRepaymentSecuritySummaryFromDetail: (
     detail: RepaymentSecurityDetailResponse | RepaymentSecurityWithSinkingFundResponse
   ): RepaymentSecuritySummaryResponse => {
     return {
@@ -127,6 +101,7 @@ export const repaymentSecurityService = {
       investeeIconUrl: detail.investeeIconUrl, 
       securityId: detail.securityId,
       securityType: detail.securityType, 
+      securityContract: detail.securityContract,
       securityName: detail.securityName,
       securityCode: detail.securityCode,
       securitySeries: detail.securitySeries,
@@ -135,7 +110,5 @@ export const repaymentSecurityService = {
       contractStatus: detail.contractStatus || null,
     };
   },
-
-
   
 };

@@ -1,29 +1,101 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios, { AxiosError } from '../../../../node_modules/axios/index';
 import logoFundex from '../../../assets/logo-fundex.svg'
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isCredentialError, setIsCredentialError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const inputErrorClasses = isCredentialError
+  ? 'border-rose-500 bg-rose-50/30 text-rose-900 placeholder-rose-300 focus:border-rose-600 focus:ring-rose-500/10'
+  : 'border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:border-[#090f26] focus:ring-[#090f26]/5';
+
+  // Validasi Form sederhana Client-side
+  const validateForm = (): boolean => {
+    if (!email.trim()) {
+      setError('Email wajib diisi.');
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Format alamat email tidak valid.');
+      return false;
+    }
+
+    if (!password) {
+      setError('Password wajib diisi.');
+      return false;
+    }
+
+    if (password.length < 6) {
+      setError('Password minimal terdiri dari 6 karakter.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validateForm()) return;
     setIsLoading(true);
 
-    // Simulasi loading jeda singkat biar terkesan riil memproses ke server
-    setTimeout(() => {
-      if (email === 'admin@fundex.id' && password === 'password123') {
-        localStorage.setItem('sum_pp_token', 'token-sukses-v3');
-        navigate('/dashboard/monitoring');
+    try {
+      await login({ email: email.trim(), password });
+      navigate('/dashboard/monitoring');
+    } catch (err: unknown) {
+      
+      // -- BARIS DEBUGGING (Hapus jika sudah jalan) --
+      console.log("LOG ERROR LENGKAP:", err); 
+      // ----------------------------------------------
+
+      // 2. Gunakan axios.isAxiosError() untuk pengecekan yang lebih akurat
+      if (axios.isAxiosError(err)) {
+        
+        if (err.response) {
+          // A. Server berhasil merespons dengan status error (401, 400, dll)
+          const status = err.response.status;
+          const data = err.response.data;
+          
+          const rawMessage = data?.message;
+          const backendMessage = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+          
+          if (status === 401) {
+            setError(backendMessage || 'Akses ditolak! Email atau password salah.');
+            setIsCredentialError(true);
+          } else if (status === 400) {
+            setError(backendMessage || 'Format data yang dikirim tidak sesuai.');
+            setIsCredentialError(true);
+          } else if (status >= 500) {
+            setError('Terjadi kendala pada server.');
+          } else {
+            setError(backendMessage || 'Gagal memproses permintaan Anda.');
+          }
+        } else if (err.request) {
+          // B. Request terkirim, tapi TIDAK ADA balasan dari server (atau diblokir CORS)
+          setError('Tidak ada respon dari server. Pastikan server backend menyala.');
+        } else {
+          // C. Kesalahan saat men-setup request di Frontend
+          setError('Terjadi kesalahan pada sistem frontend.');
+        }
       } else {
-        setError('Akses ditolak! Periksa kembali email & password Anda.');
-        setIsLoading(false);
+        // Bukan error dari Axios sama sekali (misal error di sintaks React)
+        setError('Terjadi kesalahan tak terduga.');
       }
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -94,7 +166,7 @@ export default function LoginPage() {
             <h2 className="text-8xl font-black tracking-tight text-white">
               SUM<span className="text-rose-500">.</span>
             </h2>
-            <p className="mt-2 text-xl font-medium text-slate-400">
+            <p className="mt-2 text-lg font-medium text-slate-400">
               Sistem Untuk Monitoring.
             </p>
             <div className="w-10 h-0.5 bg-rose-500/60 mt-3 rounded-full"></div>
@@ -191,38 +263,35 @@ export default function LoginPage() {
             <div className="w-8 h-0.5 bg-gradient-to-r from-[#090f26] to-rose-500 mt-3 rounded-full"></div>
           </div>
 
-          {/* Kotak Pesan Error */}
-          {error && (
-            <div className="mb-6 rounded-xl bg-rose-50 border border-rose-100 p-4 text-sm text-rose-700 flex items-center gap-2">
-              <span className="font-bold">⚠️</span> {error}
-            </div>
-          )}
 
           {/* Form Akses */}
           <form className="space-y-6" onSubmit={handleLogin}>
+            {/* Input Email */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                 Email Perusahaan
               </label>
+
               <input
                 type="email"
                 required
                 disabled={isLoading}
-                placeholder="developer@fundex.id"
+                placeholder="nama@fundex.id"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:border-[#090f26] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#090f26]/5 transition-all text-sm"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (isCredentialError) setIsCredentialError(false); // Reset error saat user mengetik kembali
+                }}
+                className={`mt-2 block w-full rounded-xl border px-4 py-3.5 text-sm transition-all focus:bg-white focus:outline-none focus:ring-4 ${inputErrorClasses}`}
               />
             </div>
 
+            {/* Input Password */}
             <div>
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                   Kata Sandi
                 </label>
-                <a href="#" className="text-xs font-semibold text-slate-500 hover:text-rose-500 hover:underline transition-colors">
-                  Lupa sandi?
-                </a>
               </div>
               <input
                 type="password"
@@ -230,21 +299,34 @@ export default function LoginPage() {
                 disabled={isLoading}
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-slate-900 placeholder-slate-400 focus:border-[#090f26] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#090f26]/5 transition-all text-sm"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (isCredentialError) setIsCredentialError(false); // Reset error saat user mengetik kembali
+                }}
+                className={`mt-2 block w-full rounded-xl border px-4 py-3.5 text-sm transition-all focus:bg-white focus:outline-none focus:ring-4 ${inputErrorClasses}`}
               />
             </div>
+
+            {/* Notifikasi Pesan Error */}
+            {error && (
+              <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-700 animate-fadeIn">
+                <svg className="h-5 w-5 shrink-0 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            )}
 
             {/* Tombol Masuk Utama */}
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-xl bg-[#090f26] px-4 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-[#121c42] focus:outline-none focus:ring-4 focus:ring-[#090f26]/20 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all"
+              className="flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#090f26] px-4 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-[#121c42] focus:outline-none focus:ring-4 focus:ring-[#090f26]/20 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Menghubungkan...</span>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                  <span>Memverifikasi...</span>
                 </div>
               ) : (
                 'Masuk ke Dashboard'

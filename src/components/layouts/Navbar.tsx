@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useBreadcrumb } from '../../contexts/BreadcrumbContext';
 import { useGlobalMode } from '../../contexts/GlobalModeContext';
+import { UserRole } from '../../features/auth/types/auth.enum';
+import { toTitleCase } from '../../utils/formatter';
 import { SafeEditModal } from '../modals/SafeEditModal'; // Sesuaikan path import lu bro
 
 interface NavbarProps {
@@ -20,11 +23,24 @@ export default function Navbar({ isCollapsed, setIsCollapsed }: NavbarProps) {
   
   // State lokal untuk kontrol muncul/tidaknya Modal Konfirmasi Vercel
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Ambil data user & fungsi logout dari Auth Context
+  const { user, logout } = useAuth();
 
 
+  // Helper untuk membuat Inisial Avatar (misal "admin@fundex.id" -> "AD", atau "Finance" -> "FI")
+  const getInitials = (emailOrRole?: string): string => {
+    if (!emailOrRole) return 'FX';
+    const namePart = emailOrRole.split('@')[0];
+    const cleanName = namePart.replace(/[^a-zA-Z]/g, '');
+    if (cleanName.length >= 2) {
+      return cleanName.substring(0, 2).toUpperCase();
+    }
+    return cleanName.toUpperCase() || 'FX';
+  };
 
-  const handleLogout = () => {
-    localStorage.removeItem('sum_pp_token');
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -78,21 +94,17 @@ export default function Navbar({ isCollapsed, setIsCollapsed }: NavbarProps) {
         {/* Kanan: Action Buttons, Info Profil & Logout */}
         <div className="flex items-center gap-5">
           
-          {/* 🔥 MODERN TOGGLE SWITCH BUTTON */}
-          <div className="flex flex-col gap-1 items-center">
-            <span className={`text-[10px] font-medium text-slate-400 ${isEditMode ? 'text-amber-600' : 'text-slate-400'}`}>
-              {/* {isManagementMode ? 'Mode Edit Aktif' : 'Mode Baca'} */}
-              Mode edit
-            </span>
+          
+
+          {/* Edit Mode Toggle */}
+          <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
+            <span className="text-[11px]  font-semibold text-slate-600">Mode Edit</span>
             <button
               onClick={handleToggleClick}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                isEditMode ? 'bg-amber-300' : 'bg-slate-300'
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${
+                isEditMode ? 'bg-amber-500' : 'bg-slate-300'
               }`}
-              role="switch"
-              aria-checked={isEditMode}
             >
-              {/* Lingkaran putih (thumb) pada toggle */}
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out ${
                   isEditMode ? 'translate-x-6' : 'translate-x-1'
@@ -104,11 +116,15 @@ export default function Navbar({ isCollapsed, setIsCollapsed }: NavbarProps) {
           {/* User Info Card */}
           <div className="flex items-center gap-3 border-l border-r border-slate-100 px-4">
             <div className="text-right">
-              <p className="text-xs font-bold text-[#090f26]">Admin Fundex</p>
-              <p className="text-[10px] font-medium text-slate-400">Super Management</p>
+              <p className="text-xs font-bold text-[#090f26]">
+                {user?.email || UserRole.UNKNOWN}
+              </p>
+              <p className="text-[10px] font-medium text-slate-400">
+                {toTitleCase(user?.role || UserRole.UNKNOWN)}
+              </p>
             </div>
             <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-[#090f26]">
-              AF
+              {getInitials(user?.email || user?.role)}
             </div>
           </div>
 
@@ -116,7 +132,7 @@ export default function Navbar({ isCollapsed, setIsCollapsed }: NavbarProps) {
             onClick={handleLogout}
             className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100 cursor-pointer"
           >
-            Keluar
+            Logout
           </button>
         </div>
       </header>

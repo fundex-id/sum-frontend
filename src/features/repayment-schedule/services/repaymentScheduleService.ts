@@ -1,59 +1,50 @@
-import axios from 'axios';
+// src/features/repayment-schedule/services/repaymentScheduleService.ts
+import { apiPrivate } from '../../../lib/api/apiClient';
 import { ApiResponse } from '../../../types/api.type';
-import { RepaymentScheduleFormRequest, RepaymentScheduleItemWithPenaltyResponse, RepaymentScheduleEditFormResponse, RepaymentScheduleDetailWithAuditResponse, RepaymentScheduleDetailResponse, RepaymentScheduleDetailWithPenaltyResponse, RepaymentScheduleCalendar } from '../dtos/repayment-schedule.dto';
+import { 
+  RepaymentScheduleFormRequest, 
+  RepaymentScheduleItemWithPenaltyResponse, 
+  RepaymentScheduleEditFormResponse, 
+  RepaymentScheduleDetailWithAuditResponse, 
+  RepaymentScheduleDetailResponse, 
+  RepaymentScheduleDetailWithPenaltyResponse, 
+  RepaymentScheduleCalendar 
+} from '../dtos/repayment-schedule.dto';
 
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-const REPAYMENT_SCHEDULE_URL = 'repayment/schedules';
-const REPAYMENT_SECURITY_URL = 'repayment/securities';
-
-const apiClient = axios.create({
-  baseURL: `${BASE_URL}`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+const PREFIX_SCHEDULES = '/repayment/schedules';
+const PREFIX_SECURITIES = '/repayment/securities';
 
 export const repaymentScheduleService = {
-
-  //DETAIL
+  // DETAIL
   getRepaymentScheduleDetail: async (scheduleId: string): Promise<ApiResponse<RepaymentScheduleDetailResponse>> => {
-    
-    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`, {
-      params: {
-        mode: 'detail', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_SCHEDULES}/${scheduleId}`, {
+      params: { mode: 'detail' },
     });
     return response.data;
   },
 
   getRepaymentScheduleDetailWithPenalty: async (scheduleId: string): Promise<ApiResponse<RepaymentScheduleDetailWithPenaltyResponse>> => {
-    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`, {
-      params: {
-        mode: 'detail-with-penalty', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_SCHEDULES}/${scheduleId}`, {
+      params: { mode: 'detail-with-penalty' },
     });
     return response.data;
   },
 
   getRepaymentScheduleEditForm: async (scheduleId: string): Promise<ApiResponse<RepaymentScheduleEditFormResponse>> => {
-    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`, {
-      params: {
-        mode: 'detail', 
-      },
+    const response = await apiPrivate.get(`${PREFIX_SCHEDULES}/${scheduleId}`, {
+      params: { mode: 'detail' },
     });
     return response.data;
   },
 
   getRepaymentScheduleWithPenalty: async (scheduleId: string): Promise<ApiResponse<RepaymentScheduleItemWithPenaltyResponse>> => {
-    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`);
+    const response = await apiPrivate.get(`/${PREFIX_SCHEDULES}/${scheduleId}`);
     return response.data;
   },
 
-  //LIST
-  // --- CALENDAR SCHEDULES (NEW) ---
+  // LIST / CALENDAR
   getRepaymentSchedulesCalendar: async (params?: { startMonth?: number; endMonth?: number }): Promise<ApiResponse<RepaymentScheduleCalendar>> => {
-    const response = await apiClient.get(`/${REPAYMENT_SCHEDULE_URL}/calendar`, {
+    const response = await apiPrivate.get(`${PREFIX_SCHEDULES}/calendar`, {
       params,
     });
     return response.data;
@@ -68,29 +59,31 @@ export const repaymentScheduleService = {
     //   throw new Error('securityId is required before fetching schedules');
     // }
 
-    const response = await apiClient.get(`/${REPAYMENT_SECURITY_URL}/${securityId}/schedules`);
-    return response.data;
-  },
-  
-  //CREATE
-  createRepaymentSchedule: async (securityId: string, payload: RepaymentScheduleFormRequest): Promise<RepaymentScheduleDetailWithAuditResponse> => {
-    // const response = await axios.post(`${BASE_URL}/repayment/securities/${securityId}/schedules`, payload);
-
-    const response = await apiClient.post(`/${REPAYMENT_SECURITY_URL}/${securityId}/schedules`, payload);
-    return response.data;
-  },
-  
-  //UPDATE
-  updateRepaymentSchedule: async (scheduleId: string, payload: RepaymentScheduleFormRequest): Promise<RepaymentScheduleDetailWithAuditResponse> => {
-    // const response = await axios.put(`${API_BASE_URL}/repayment/schedules/${scheduleId}`, payload);
-    const response = await apiClient.put(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`, payload);
+    const response = await apiPrivate.get(`${PREFIX_SECURITIES}/${securityId}/schedules`);
     return response.data;
   },
 
-  //DELETE
+  // CREATE
+  createRepaymentSchedule: async (
+    securityId: string, 
+    payload: RepaymentScheduleFormRequest
+  ): Promise<RepaymentScheduleDetailWithAuditResponse> => {
+    const response = await apiPrivate.post(`${PREFIX_SECURITIES}/${securityId}/schedules`, payload);
+    return response.data;
+  },
+
+  // UPDATE
+  updateRepaymentSchedule: async (
+    scheduleId: string, 
+    payload: RepaymentScheduleFormRequest
+  ): Promise<RepaymentScheduleDetailWithAuditResponse> => {
+    const response = await apiPrivate.put(`${PREFIX_SCHEDULES}/${scheduleId}`, payload);
+    return response.data;
+  },
+
+  // DELETE
   deleteRepaymentSchedule: async (scheduleId: string): Promise<RepaymentScheduleDetailWithAuditResponse> => {
-    const response = await apiClient.delete(`/${REPAYMENT_SCHEDULE_URL}/${scheduleId}`);
+    const response = await apiPrivate.delete(`${PREFIX_SCHEDULES}/${scheduleId}`);
     return response.data;
   },
-
 };
