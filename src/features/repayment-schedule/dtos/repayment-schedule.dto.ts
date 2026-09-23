@@ -18,7 +18,6 @@ extends RepaymentScheduleID,
         penaltySettled: string;
         penaltyIsSettled: boolean;
         penaltyCalculated: string;
-          
       }
 
 export interface RepaymentScheduleDetailWithAuditResponse
@@ -34,8 +33,7 @@ extends RepaymentScheduleID,
         RepaymentScheduleParent,
         RepaymentScheduleInfo,
         RepaymentScheduleInvoiceInfo,
-        RepaymentScheduleInvoiceFee,
-        RepaymentScheduleAuditTrail {}
+        RepaymentScheduleInvoiceFee {}
 
   export interface RepaymentScheduleFormRequest 
   extends RepaymentScheduleParent,
@@ -65,6 +63,10 @@ extends RepaymentScheduleID,
   securityCode: string;
   
 }
+
+export interface InvoiceRemainingBalanceResponse
+extends RepaymentScheduleID,
+        RepaymentScheduleInvoiceFee {}
     
 
 

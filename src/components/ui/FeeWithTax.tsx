@@ -56,8 +56,8 @@ const colorBaseMap: Record<FeeColor, string> = {
   green: 'text-emerald-700', 
   blue: 'text-blue-700',
   red: 'text-rose-700',
-  yellow: 'text-amber-600',
-  grey: 'text-gray-600',
+  yellow: 'text-amber-700',
+  gray: 'text-gray-600',
 };
 
 // 👇 Mapping warna untuk nilai pajak (tax)
@@ -66,8 +66,8 @@ const colorTaxMap: Record<FeeColor, string> = {
   green: 'text-emerald-500',
   blue: 'text-blue-500',
   red: 'text-rose-500',
-  yellow: 'text-amber-500',
-  grey: 'text-gray-500',
+  yellow: 'text-amber-600',
+  gray: 'text-gray-500',
 };
 
 export default function FeeWithTax({ 

@@ -359,15 +359,15 @@ export default function SchedulePanel({
                 <tr className="bg-slate-50 text-slate-500 tracking-wider border-y border-slate-200">
                   <td className="w-28 py-2 px-2 pr-10 font-bold text-right text-[14px] " colSpan={3}>TOTAL</td>
                   <td className="py-2 px-2 font-bold text-right">
-                    <FeeWithTax base={totalSinkingFund} weight='bold' withRp={false} color={`${isSinkingFundMatched?'black':'red'}`}/>
+                    <FeeWithTax base={totalSinkingFund} weight='bold' withRp={false} color={`${isSinkingFundMatched?'black':'yellow'}`}/>
                   </td>
                   <td className="py-2 px-2 font-bold text-right">
-                    <FeeWithTax base={totalYieldAmount} weight='bold' withRp={false} color={`${isYieldAmountMatched?'black':'red'}`}/>
+                    <FeeWithTax base={totalYieldAmount} weight='bold' withRp={false} color={`${isYieldAmountMatched?'black':'yellow'}`}/>
                   </td>
                   <td className="py-2 px-2 font-bold text-right">
-                    <FeeWithTax base={totalMonitoringFee} weight='bold' withRp={false} color={`${isMonitoringFeeMatched?'black':'red'}`}/>
+                    <FeeWithTax base={totalMonitoringFee} weight='bold' withRp={false} color={`${isMonitoringFeeMatched?'black':'yellow'}`}/>
                   </td>
-                  <td className="py-2 px-2 pl-10 text-left text-[9px] text-rose-500" colSpan={3}>
+                  <td className="py-2 px-2 pl-10 text-left text-[9px] text-amber-700" colSpan={3}>
                       {totalCorrectionMessage}
                   </td>
                   {isEditMode && (<td></td>)}

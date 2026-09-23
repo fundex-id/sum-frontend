@@ -220,7 +220,7 @@ export default function SecurityCollateralPage() {
                     <th className="w-3/12 py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Detail Jaminan</th>
                     <th className="w-7/12 py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Verifikasi</th>
                     <th className="w-1/12 py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Estimasi Nilai</th>
-                    <th className="w-14 py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Dokumen</th>
+                    <th className="w-14 py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Dok</th>
                     {isEditMode && (<th className="w-14 py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Edit</th>)}
                 </tr>
               </thead>

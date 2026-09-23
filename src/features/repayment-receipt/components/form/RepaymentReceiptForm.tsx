@@ -14,11 +14,13 @@ import FormHeader from '../../../../components/forms/FormHeader';
 import { LoadingForm } from '../../../../components/forms/LoadingForm';
 import { FieldValidationConfig, validateFormFields } from '../../../../utils/form';
 import { DeleteDataSection } from '../../../../components/forms/DeleteDataSection';
+import { InvoiceRemainingBalanceResponse } from '../../../repayment-schedule/dtos/repayment-schedule.dto';
 
 interface Props {
   mode: 'add' | 'edit';
   initialData: RepaymentReceiptFormRequest;
   invoiceSummary: InvoiceSummaryWithPenaltyBig; // Dummy/Target Schedule data for waterfall limits
+  invoiceRemaining: InvoiceRemainingBalanceResponse;
   onSubmit: (data: RepaymentReceiptFormRequest) => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -26,7 +28,7 @@ interface Props {
   submissionError?: string | null; 
 }
 
-export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary, onSubmit, onCancel, onDelete, isLoading, submissionError }: Props) {
+export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary, invoiceRemaining, onSubmit, onCancel, onDelete, isLoading, submissionError }: Props) {
   const { closePanel } = useSidePanel();
   const [formData, setFormData] = useState<RepaymentReceiptFormRequest>(initialData);
 
@@ -179,9 +181,6 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
     }
     
 
-    
-    // if (remTotalWithTax.lt(0)) remTotalWithTax = new Big(0);
-
     // Reset base components supaya bersih dari manual input sebelumnya
     const newForm = {
       ...formData,
@@ -204,11 +203,6 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
       setFormData(calculateTaxesAndTotals(newForm, true)); 
       return;
     }
-
-    // if (!invoiceSummary) {
-    //   setFormData(calculateTaxesAndTotals({ ...newForm, receiptTotalWithTax: val.toString() }));
-    //   return;
-    // }
 
     // Helper: Alokasi proporsional berdasarkan cap tagihan (Invoice)
     const allocComponentBase = (invBase: Big | undefined | null, hasTax: boolean = true) => {
@@ -237,34 +231,35 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
 
     // 3. Distribusi biaya berdasar ScheduleType
     if (invoiceSummary.scheduleType === ScheduleType.UPFRONT) {
-      newForm.receiptFeeAdministration = allocComponentBase(invoiceSummary.invoiceFeeAdministration, true);
-      newForm.receiptFeeProvision = allocComponentBase(invoiceSummary.invoiceFeeProvision, true);
-      newForm.receiptFeePlatform = allocComponentBase(invoiceSummary.invoiceFeePlatform, true);
-      newForm.receiptFeeServicing = allocComponentBase(invoiceSummary.invoiceFeeServicing, true);
+
+      newForm.receiptFeeAdministration = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeAdministration), true);
+      newForm.receiptFeeProvision = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeProvision), true);
+      newForm.receiptFeePlatform = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeePlatform), true);
+      newForm.receiptFeeServicing = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeServicing), true);
       
       // Jika masih ada sisa/excess dana, distribusikan semua ke Fee Other
-      const otherBaseLimit = invoiceSummary.invoiceFeeOther;
+      const otherBaseLimit = toSafeBig(invoiceRemaining.invoiceFeeOther);
       if (remTotalWithTax.gt(0)) {
          const allocBaseExcess = remTotalWithTax.div(new Big(1).plus(taxRate));
          newForm.receiptFeeOther = otherBaseLimit.plus(allocBaseExcess).round(precision).toString();
          remTotalWithTax = new Big(0);
       } else {
-         newForm.receiptFeeOther = allocComponentBase(invoiceSummary.invoiceFeeOther, true);
+         newForm.receiptFeeOther = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeOther), true);
       }
 
     } else if (invoiceSummary.scheduleType === ScheduleType.INSTALLMENT) {
-      newForm.receiptFeeMonitoring = allocComponentBase(invoiceSummary.invoiceFeeMonitoring, true);
-      newForm.receiptSinkingFund = allocComponentBase(invoiceSummary.invoiceSinkingFund, false);
-      newForm.receiptYield = allocComponentBase(invoiceSummary.invoiceYield, false);
+      newForm.receiptFeeMonitoring = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeMonitoring), true);
+      newForm.receiptSinkingFund = allocComponentBase(toSafeBig(invoiceRemaining.invoiceSinkingFund), false);
+      newForm.receiptYield = allocComponentBase(toSafeBig(invoiceRemaining.invoiceYield), false);
       
       // Jika masih ada sisa/excess dana, distribusikan semua ke Fee Other
-      const otherBaseLimit = invoiceSummary.invoiceFeeOther;
+      const otherBaseLimit = toSafeBig(invoiceRemaining.invoiceFeeOther);
       if (remTotalWithTax.gt(0)) {
          const allocBaseExcess = remTotalWithTax.div(new Big(1).plus(taxRate));
          newForm.receiptFeeOther = otherBaseLimit.plus(allocBaseExcess).round(precision).toString();
          remTotalWithTax = new Big(0);
       } else {
-         newForm.receiptFeeOther = allocComponentBase(invoiceSummary.invoiceFeeOther, true);
+         newForm.receiptFeeOther = allocComponentBase(toSafeBig(invoiceRemaining.invoiceFeeOther), true);
       }
     }
 
@@ -372,6 +367,10 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
 
             {/* GROUP 1: Informasi Dasar */}
             <FormGroup title="INFORMASI PENERIMAAN DANA" colRatio="1:1">
+              <NumberField label="Sisa Total Tagihan" 
+                            name="remainingTotalWithTax"
+                            value={invoiceRemaining?.invoiceTotalWithTax} 
+                            disabled={true} colSpan="1" />
               <NumberField label="Jumlah Total Tagihan" 
                             name="invoiceTotalWithTax"
                             value={invoiceSummary?.invoiceTotalWithTax.round(precision).toString()} 
@@ -380,6 +379,12 @@ export default function RepaymentReceiptForm({ mode, initialData, invoiceSummary
               <Input label="Tanggal Pembayaran" type="date" 
                       name="receiptDate" hasError={isError('receiptDate')}
                       value={formatDateForInput(formData.receiptDate)} 
+                      onChange={handleChange} colSpan="1" />
+
+              <Input label="Jatuh Tempo Pembayaran" type="date" 
+                      name="scheduelDate" 
+                      disabled
+                      value={formatDateForInput(invoiceSummary.scheduleDate)} 
                       onChange={handleChange} colSpan="1" />
               
               <Select label="Metode Pembayaran"

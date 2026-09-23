@@ -1,5 +1,13 @@
-import { ContractStatus, SecurityType } from "../types/repayment-security.enum";
-import { RepaymentSecurityAuditTrail, RepaymentSecurityContactAndBank, RepaymentSecurityDocuments, RepaymentSecurityFees, RepaymentSecurityID, RepaymentSecurityIdentity, RepaymentSecurityInvestment, RepaymentSecurityPenaltiesAndTaxes, RepaymentSecurityRestructuring, RepaymentSecurityRouting } from "../types/repayment-security.type";
+import { RepaymentSecurityAuditTrail, 
+          RepaymentSecurityContactAndBank, 
+          RepaymentSecurityDetailInfo, 
+          RepaymentSecurityDocuments, 
+          RepaymentSecurityFees, 
+          RepaymentSecurityID, 
+          RepaymentSecurityInvesteeInfo, 
+          RepaymentSecurityInvestment, 
+          RepaymentSecurityPenaltiesAndTaxes, 
+          RepaymentSecurityRestructuring } from "../types/repayment-security.type";
 
 // export interface RepaymentSecurityDetailResponse {
   
@@ -7,7 +15,8 @@ import { RepaymentSecurityAuditTrail, RepaymentSecurityContactAndBank, Repayment
 
 export interface RepaymentSecurityDetailResponse 
   extends RepaymentSecurityID,
-          RepaymentSecurityIdentity, 
+          RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo, 
           RepaymentSecurityInvestment, 
           RepaymentSecurityFees, 
           RepaymentSecurityPenaltiesAndTaxes, 
@@ -16,7 +25,8 @@ export interface RepaymentSecurityDetailResponse
 
 export interface RepaymentSecurityDetailWithAuditResponse 
 extends RepaymentSecurityID,
-        RepaymentSecurityIdentity, 
+        RepaymentSecurityInvesteeInfo,
+        RepaymentSecurityDetailInfo, 
         RepaymentSecurityInvestment, 
         RepaymentSecurityFees, 
         RepaymentSecurityPenaltiesAndTaxes, 
@@ -32,26 +42,30 @@ export interface RepaymentSecurityWithSinkingFundResponse
 // 1. DTO untuk masing-masing item (fokus ke isi data.items)
 export interface RepaymentSecurityCardResponse 
   extends RepaymentSecurityID,
-          RepaymentSecurityIdentity, 
+          RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo, 
           RepaymentSecurityInvestment {
     receiptSinkingFundSum: string;
 }
 
 export interface RepaymentSecuritySummaryResponse 
   extends RepaymentSecurityID,
-          RepaymentSecurityIdentity,
+          RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo,
           Pick<RepaymentSecurityInvestment, 'contractStatus'>{
 }
 
 export interface SecurityLookupResponse 
   extends RepaymentSecurityID,
-          RepaymentSecurityIdentity {
+          RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo {
 }
 
   // file: repayment-security-item.dto.ts
 
   export interface RepaymentSecurityFormRequest 
-  extends RepaymentSecurityIdentity, 
+  extends RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo, 
           RepaymentSecurityInvestment, 
           RepaymentSecurityFees, 
           RepaymentSecurityPenaltiesAndTaxes, 
@@ -70,7 +84,8 @@ export interface SecurityLookupResponse
           }
 
   export interface RepaymentSecurityEditFormResponse 
-  extends RepaymentSecurityIdentity, 
+  extends RepaymentSecurityInvesteeInfo,
+          RepaymentSecurityDetailInfo, 
           RepaymentSecurityInvestment, 
           RepaymentSecurityFees, 
           RepaymentSecurityPenaltiesAndTaxes, 

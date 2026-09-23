@@ -8,7 +8,8 @@ import {
   RepaymentScheduleDetailWithAuditResponse, 
   RepaymentScheduleDetailResponse, 
   RepaymentScheduleDetailWithPenaltyResponse, 
-  RepaymentScheduleCalendar 
+  RepaymentScheduleCalendar, 
+  InvoiceRemainingBalanceResponse
 } from '../dtos/repayment-schedule.dto';
 
 const PREFIX_SCHEDULES = '/repayment/schedules';
@@ -39,6 +40,12 @@ export const repaymentScheduleService = {
 
   getRepaymentScheduleWithPenalty: async (scheduleId: string): Promise<ApiResponse<RepaymentScheduleItemWithPenaltyResponse>> => {
     const response = await apiPrivate.get(`/${PREFIX_SCHEDULES}/${scheduleId}`);
+    return response.data;
+  },
+
+  getInvoiceRemainingBalance: async (scheduleId: string): Promise<ApiResponse<InvoiceRemainingBalanceResponse>> => {
+    // Sesuaikan format kembalian response dengan Interceptor yang Anda miliki
+    const response = await apiPrivate.get(`${PREFIX_SCHEDULES}/${scheduleId}/remaining`);
     return response.data;
   },
 

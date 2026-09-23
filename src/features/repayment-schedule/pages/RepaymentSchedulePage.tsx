@@ -13,7 +13,7 @@ import { repaymentScheduleService } from '../services/repaymentScheduleService';
 import { repaymentReceiptService } from '../../repayment-receipt/services/repaymentReceiptService';
 import { repaymentSecurityService } from '../../repayment-security/services/repaymentSecurityService';
 import { RepaymentSecurityDetailResponse } from '../../repayment-security/dtos/repayment-security.dto';
-import { RepaymentScheduleDetailWithPenaltyResponse } from '../dtos/repayment-schedule.dto';
+import { InvoiceRemainingBalanceResponse, RepaymentScheduleDetailWithPenaltyResponse } from '../dtos/repayment-schedule.dto';
 import { RepaymentReceiptDetailResponse } from '../../repayment-receipt/dtos/repayment-receipt.dto';
 import { toSafeBig } from '../../../utils/number';
 import { calculateDays, formatDate } from '../../../utils/date';
@@ -27,9 +27,10 @@ export default function RepaymentSchedulePage() {
     scheduleId: string; 
   }>();
   
+  const [repaymentSecurity, setRepaymentSecurity] = useState<RepaymentSecurityDetailResponse>();
   const [schedule, setSchedule] = useState<RepaymentScheduleDetailWithPenaltyResponse > ();
   const [receipts, setReceipts] = useState<RepaymentReceiptDetailResponse[]>([]);
-  const [repaymentSecurity, setRepaymentSecurity] = useState<RepaymentSecurityDetailResponse>();
+  const [invoiceRemaining, setInvoiceRemaining] = useState<InvoiceRemainingBalanceResponse>();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +80,37 @@ export default function RepaymentSchedulePage() {
     }
   }, [repaymentId]);
 
+  const fetchInvoiceRemainingBalance = useCallback(async () => {
+    if (!scheduleId) return null;
+    try {
+      const res = await repaymentScheduleService.getInvoiceRemainingBalance(scheduleId);
+      // Tergantung interceptor: res.data.item atau res.data
+      setInvoiceRemaining(res.data.item);
+      return res.data.item;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan sistem';
+      setError(errorMessage);
+      return null;
+    }
+  }, [scheduleId]);
+
+  // 5. Callback gabungan untuk memanggil Remaining Balance dan Receipts secara bersamaan
+  const fetchScheduleAndReceiptAndInvoiceRemaining = useCallback(async () => {
+    // Tidak perlu guard clause (!scheduleId) di sini karena masing-masing 
+    // fungsi di dalamnya sudah memiliki guard clause-nya sendiri.
+    
+    try {
+      // Jalankan secara paralel untuk menghemat waktu request
+      await Promise.all([
+        fetchRepaymentSchedule(),
+        fetchInvoiceRemainingBalance(),
+        fetchRepaymentReceipts()
+      ]);
+    } catch (err) {
+      console.error("Gagal memuat data receipt dan remaining balance", err);
+    }
+  }, [fetchInvoiceRemainingBalance, fetchRepaymentReceipts, fetchRepaymentSchedule]);
+
   useEffect(() => {
     // Guard clause agar tidak mengeksekusi jika ID belum ada
     if (!scheduleId || !repaymentId) return;
@@ -89,10 +121,11 @@ export default function RepaymentSchedulePage() {
         setError(null);
     
         // Jalankan paralel dan tangkap hasil return dari callback
-        const [scheduleRes, receiptsRes, repaymentRes] = await Promise.all([
+        const [scheduleRes, receiptsRes, repaymentRes, remainingRes] = await Promise.all([
           fetchRepaymentSchedule(),
           fetchRepaymentReceipts(),
-          fetchRepaymentSecurity()
+          fetchRepaymentSecurity(),
+          fetchInvoiceRemainingBalance(),
         ]);
     
         // Set Breadcrumbs jika data Schedule & Security berhasil didapat
@@ -120,7 +153,7 @@ export default function RepaymentSchedulePage() {
     };
   
     fetchAllDetails();
-  }, [scheduleId, repaymentId, fetchRepaymentSchedule, fetchRepaymentReceipts, fetchRepaymentSecurity
+  }, [scheduleId, repaymentId, fetchRepaymentSchedule, fetchRepaymentReceipts, fetchRepaymentSecurity, fetchInvoiceRemainingBalance
   ]);
 
   const invoiceSummary: InvoiceSummaryWithPenaltyBig = {
@@ -451,7 +484,7 @@ export default function RepaymentSchedulePage() {
       </div>
 
       {/* KOMPONEN RECEIPT PANEL (KOMPONEN TABEL DIPISAH) */}
-      <ReceiptPanel receipts={receipts} invoiceSummary={invoiceSummary} onDataChanged={fetchRepaymentReceipts}/>
+      <ReceiptPanel receipts={receipts} invoiceSummary={invoiceSummary} invoiceRemaining={invoiceRemaining} onDataChanged={fetchScheduleAndReceiptAndInvoiceRemaining}/>
     </div>
   );
 }

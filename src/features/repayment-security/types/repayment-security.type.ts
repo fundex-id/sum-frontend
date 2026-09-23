@@ -7,12 +7,18 @@ export interface RepaymentSecurityID {
 }
 
 
-export interface RepaymentSecurityIdentity {
+export interface RepaymentSecurityInvesteeInfo {
   investeeId: string; 
   securityId: string; 
   investeeName: string;
   investeeNameLegal: string;
   investeeIconUrl: string | null;
+  investeeAddress: string | null;
+  investeeTelephone: string | null;
+  investeePostalCode: string | null;
+}
+
+export interface RepaymentSecurityDetailInfo {
   securityType: SecurityType | null | '';
   securityContract: SecurityContract | null | '';
   securityName: string;

@@ -9,6 +9,7 @@ export enum ContractStatus {
 export enum SecurityType {
   SUKUK = 'SUKUK',
   SAHAM = 'SAHAM',
+  OBLIGASI = 'OBLIGASI',
 }
 
 export enum SecurityContract {

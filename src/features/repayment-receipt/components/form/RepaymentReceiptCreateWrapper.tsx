@@ -7,13 +7,15 @@ import { ReceiptStatus } from '../../types/repayment-receipt.enum';
 import { InvoiceSummaryWithPenaltyBig } from '../../../repayment-schedule/types/repayment-schedule.type';
 import { RepaymentReceiptFormRequest } from '../../dtos/repayment-receipt.dto';
 import { mapDtoToFormData } from '../../../../utils/form';
+import { InvoiceRemainingBalanceResponse } from '../../../repayment-schedule/dtos/repayment-schedule.dto';
 
 interface Props {
   invoiceSummary: InvoiceSummaryWithPenaltyBig;
+  invoiceRemaining: InvoiceRemainingBalanceResponse;
   onSuccess?: ()=> void;
 }
 
-export default function RepaymentReceiptCreateWrapper({invoiceSummary, onSuccess }: Props) {
+export default function RepaymentReceiptCreateWrapper({invoiceSummary, invoiceRemaining, onSuccess }: Props) {
   const { closePanel } = useSidePanel();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -89,6 +91,7 @@ export default function RepaymentReceiptCreateWrapper({invoiceSummary, onSuccess
       mode='add'
       initialData={initialData}
       invoiceSummary={invoiceSummary}
+      invoiceRemaining={invoiceRemaining}
       onSubmit={handleCreateSubmit} 
       onCancel={closePanel} 
       isLoading={isSubmitting} 

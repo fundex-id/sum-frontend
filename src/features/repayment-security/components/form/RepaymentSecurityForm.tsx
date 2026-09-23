@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSidePanel } from '../../../../contexts/SidePanelContext';
 import { RepaymentSecurityFormRequest, SecurityLookupResponse } from '../../dtos/repayment-security.dto';
-import { ContractStatus, SecurityContract } from '../../types/repayment-security.enum';
+import { ContractStatus, SecurityContract, SecurityType } from '../../types/repayment-security.enum';
 import { Big } from 'big.js'; 
-import { FormGroup, ConfirmModal, Select, Input, NumberField, Toggle, FormFooter, FormHeader} from '../../../../components/forms/index';
+import { FormGroup, ConfirmModal, Select, Input, NumberField, Toggle, FormFooter, FormHeader, TextArea} from '../../../../components/forms/index';
 import { toSafeBig } from '../../../../utils/number';
 import { repaymentSecurityService } from '../../services/repaymentSecurityService';
 import { FileInput } from '../../../../components/forms/FileInput';
@@ -81,12 +81,42 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
     return months <= 0 ? 0 : months;
   };
 
+  // useEffect(() => {
+  //   if (formData.contractStartDate && formData.contractEndDate) {
+  //     const duration = countMonths(formData.contractStartDate, formData.contractEndDate);
+  //     console.log('[onchangedate] formData.contractStartDate : ',formData.contractStartDate);
+  //     console.log('[onchangedate] formData.contractEndDate : ',formData.contractEndDate);
+  //     console.log('[onchangedate] duration : ',duration);
+  //     if (duration !== formData.contractDurationInMonths) {
+  //       setFormData(prev => {
+  //         const fund = new Big(prev.contractUnderlyingFund || 0);
+  //         const rate = new Big(prev.contractYieldRateAnnually || 0);
+  //         const durationInMonths = Number(duration) || 0;
+  //         const feeMonitoringMonthly = new Big(prev.contractFeeMonitoringMonthly || 0);
+  //         const feeMonitoringMonthlyPercentage = new Big(prev.contractFeeMonitoringPercentageMonthly || 0);
+          
+  //         // fund * (rate / 100) * (duration / 12)
+  //         const yieldAmt : Big = fund.times(rate.div(100)).div(12).times(durationInMonths);
+          
+  //         return {
+  //           ...prev,
+  //           contractDurationInMonths: durationInMonths,
+  //           contractYieldAmount: yieldAmt.round(maxPrecision).toString(),
+  //           contractFeeMonitoring: feeMonitoringMonthly.times(duration).round(maxPrecision).toString(),
+  //           contractFeeMonitoringPercentage: feeMonitoringMonthlyPercentage.times(duration).round(maxPrecisionPct).toString(),
+  //         };
+  //       });
+  //     }
+  //   }
+  // }, [formData.contractStartDate, formData.contractEndDate]);
+
   useEffect(() => {
+    const hasStart = !!formData.contractStartDate;
+    const hasEnd = !!formData.contractEndDate;
+  
     if (formData.contractStartDate && formData.contractEndDate) {
+      // Di sini TypeScript tahu keduanya pasti `string`, bukan `string | null`
       const duration = countMonths(formData.contractStartDate, formData.contractEndDate);
-      console.log('[onchangedate] formData.contractStartDate : ',formData.contractStartDate);
-      console.log('[onchangedate] formData.contractEndDate : ',formData.contractEndDate);
-      console.log('[onchangedate] duration : ',duration);
       if (duration !== formData.contractDurationInMonths) {
         setFormData(prev => {
           const fund = new Big(prev.contractUnderlyingFund || 0);
@@ -94,10 +124,9 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
           const durationInMonths = Number(duration) || 0;
           const feeMonitoringMonthly = new Big(prev.contractFeeMonitoringMonthly || 0);
           const feeMonitoringMonthlyPercentage = new Big(prev.contractFeeMonitoringPercentageMonthly || 0);
-          
-          // fund * (rate / 100) * (duration / 12)
-          const yieldAmt : Big = fund.times(rate.div(100)).div(12).times(durationInMonths);
-          
+  
+          const yieldAmt: Big = fund.times(rate.div(100)).div(12).times(durationInMonths);
+  
           return {
             ...prev,
             contractDurationInMonths: durationInMonths,
@@ -107,7 +136,16 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
           };
         });
       }
+    } else if (hasStart !== hasEnd) {
+      // Hanya salah satu terisi -> kosongkan durasi jadi null (bukan 0), disabled
+      if (formData.contractDurationInMonths !== null) {
+        setFormData(prev => ({
+          ...prev,
+          contractDurationInMonths: null,
+        }));
+      }
     }
+    // Kalau keduanya kosong: jangan sentuh value, biarkan user isi manual
   }, [formData.contractStartDate, formData.contractEndDate]);
 
   // GROUP 3 KALKULATOR
@@ -228,13 +266,16 @@ const durationBig = new Big(duration.toString());
   };
 
   // VALIDASI FORM
- 
-
-
   const handleSecuritySelect = (e: any) => {
 
     if (validationErrors.includes('securityName')) {
       setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'securityName'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'securityType'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'investeeName'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'investeeNameLegal'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'investeeAddress'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'investeeTelephone'));
+      setValidationErrors((prevErrors) => prevErrors.filter((key) => key !== 'investeePostalCode'));
     }
 
 
@@ -251,6 +292,9 @@ const durationBig = new Big(duration.toString());
         investeeName: item.investeeName,
         investeeNameLegal: item.investeeNameLegal,
         investeeIconUrl: item.investeeIconUrl,
+        investeeAddress: item.investeeAddress,
+        investeeTelephone: item.investeeTelephone,
+        investeePostalCode: item.investeePostalCode,
         securityId: item.securityId,
         securityType: item?.securityType || null,
         securityContract: Object.values(SecurityContract).includes(item?.securityContract as SecurityContract)
@@ -263,7 +307,23 @@ const durationBig = new Big(duration.toString());
         securitySequence: item.securitySequence,
       }));
     } else {
-      setFormData(prev => ({ ...prev, securityName: '' })); 
+      setFormData(prev => ({ 
+        ...prev,
+        investeeId: '',
+        investeeName: '',
+        investeeNameLegal: '',
+        investeeIconUrl: '',
+        investeeAddress: '',
+        investeeTelephone: '',
+        investeePostalCode: '',
+        securityId: '',
+        securityType: '',
+        securityContract: '',
+        securityName: '',
+        securityCode: '',
+        securitySeries: null,
+        securityPhase: null,
+        securitySequence: null, })); 
     }
   };
 
@@ -294,6 +354,51 @@ const durationBig = new Big(duration.toString());
       ...prevData,
       [field]: value
     }));
+  };
+
+  const handleTimeDurationChange = (field: 'contractStartDate' | 'contractEndDate' | 'contractDurationInMonths') => (valueOrEvent: any) => {
+
+    // --- Ekstrak value baru (support raw value atau native event) ---
+    let value = valueOrEvent;
+    if (valueOrEvent && valueOrEvent.target !== undefined) {
+      value = valueOrEvent.target.value;
+    }
+  
+    
+    // --- Normalisasi value sesuai tipe field ---
+    let normalizedValue: any = value;
+    if (field === 'contractDurationInMonths') {
+      normalizedValue = value === '' ? null : Number(value);
+    }
+
+    // --- Update formData ---
+    setFormData(prev => ({
+      ...prev,
+      [field]: normalizedValue,
+    }));
+
+    // --- Normalisasi validationErrors ---
+    if (field === 'contractStartDate' || field === 'contractEndDate') {
+      const newStart = field === 'contractStartDate' ? normalizedValue : formData.contractStartDate;
+      const newEnd = field === 'contractEndDate' ? normalizedValue : formData.contractEndDate;
+
+      const hasStart = !!newStart;
+      const hasEnd = !!newEnd;
+      const otherDateField = field === 'contractStartDate' ? 'contractEndDate' : 'contractStartDate';
+
+      setValidationErrors(prevErrors => 
+        prevErrors.filter(key => {
+          if (key === field) return false; // hilangkan error field yang sedang diedit
+          if (hasStart && hasEnd && (key === otherDateField || key === 'contractDurationInMonths')) {
+            return false; // kedua tanggal lengkap -> bersihkan pasangan + duration
+          }
+          return true;
+        })
+      );
+    } else {
+      // field === 'contractDurationInMonths'
+      setValidationErrors(prevErrors => prevErrors.filter(key => key !== field));
+    }
   };
 
   const handlePreSubmit = (e: React.FormEvent) => {
@@ -332,18 +437,31 @@ const durationBig = new Big(duration.toString());
     // const missingKeys: string[] = [];
 
     const requiredFields: FieldValidationConfig<typeof formData>[] = [
+      { key: 'investeeName', label: 'Nama Penerbit' }, 
+      { key: 'investeeNameLegal', label: 'Nama Legal Penerbit' },
       { key: 'securityName', label: 'Nama efek', type: 'select' },
-      // { key: 'investeeName', label: 'Nama Penerbit' }, 
-      // { key: 'investeeNameLegal', label: 'Nama Legal Penerbit' },
+      { key: 'securityType', label: 'Tipe Efek' },
+      // { key: 'securityContract', label: 'Kontrak Efek' },
       // { key: 'securityCode', label: 'Kode Efek' },
-      // { key: 'securityType', label: 'Tipe Efek' },
       // { key: 'securitySequence', label: 'Sequence' },
       // { key: 'securitySeries', label: 'Series' },
       // { key: 'securityPhase', label: 'Phase' },
       // { key: 'investeeIconUrl', label: 'Icon URL' },
-      { key: 'contractStartDate', label: 'Waktu Mulai Efek' },
-      { key: 'contractEndDate', label: 'Waktu Selesai Efek' },
-      { key: 'contractDurationInMonths', label: 'Durasi Kontrak (Bulan)' },
+      { key: 'investeeAddress', label: 'Alamat Penerbit' },
+      { key: 'investeeTelephone', label: 'Telepon' },
+      { key: 'investeePostalCode', label: 'Kode Pos' },
+
+       // --- Bidirectional dependency: salah satu terisi -> yang lain wajib ---
+      { 
+        key: 'contractStartDate', label: 'Waktu Mulai Efek', type: 'date', optional: true,
+        dependencies: [{ key: 'contractEndDate', label: 'Waktu Selesai Efek', type: 'date' }]
+      },
+      { 
+        key: 'contractEndDate', label: 'Waktu Selesai Efek', type: 'date', optional: true,
+        dependencies: [{ key: 'contractStartDate', label: 'Waktu Mulai Efek', type: 'date' }]
+      },
+
+      { key: 'contractDurationInMonths', label: 'Durasi Kontrak (Bulan)', type:'numeric-input' },
       { key: 'contractStatus', label: 'Status', type: 'select' },
       { key: 'contractUnderlyingFund', label: 'Jumlah Pendanaan', type: 'numeric-input',
           dependencies: [
@@ -391,8 +509,7 @@ const durationBig = new Big(duration.toString());
     return true;
 
 
-    
-   
+
     // if (!isEmptyField(formData.scheduleType, 'select')) { 
 
     //   if (isEmptyField(formData.invoiceTotalWithTax, 'numeric-input')) { 
@@ -419,10 +536,19 @@ const durationBig = new Big(duration.toString());
 
   // const isGroup3Active = formData.contractUnderlyingFund > 0 && formData.contractDurationInMonths > 0;
 
-// Pastikan datanya valid sebelum dibungkus (mencegah error jika string kosong atau null)
+  // Pastikan datanya valid sebelum dibungkus (mencegah error jika string kosong atau null)
   const fundStr = formData.contractUnderlyingFund || '0';
   const durationStr = formData.contractDurationInMonths || '0';
 
+  const hasStartDate = !!formData.contractStartDate;
+  const hasEndDate = !!formData.contractEndDate;
+  // Editable HANYA kalau kedua tanggal masih kosong
+  const isDurationDisabled = hasStartDate || hasEndDate;
+
+  const hasSecurityType = !!selectedLookupId && !!securities.find(s => s.id === selectedLookupId)?.securityType;
+  const hasSecurityCode = !!selectedLookupId && !!securities.find(s => s.id === selectedLookupId)?.securityCode;
+  
+  
   const isGroup3Active = new Big(fundStr).gt(0) && new Big(durationStr).gt(0);
 
 
@@ -465,14 +591,59 @@ const durationBig = new Big(duration.toString());
                 <option value="">-- Pilih Security Name --</option>
                 {securities.map(s => <option key={s.id} value={s.id}>{s.securityName} - {s.securityCode}</option>)}
               </Select>
-              <Input label="Nama Penerbit" name="investeeName" disabled value={formData.investeeName} />
-              <Input label="Nama Legal Penerbit" name="investeeNameLegal" disabled value={formData.investeeNameLegal} />
-              <Input label="Tipe efek" name="securityType" disabled value={formData.securityType} />
-              <Input label="Kontrak Efek" name="securityContract" disabled value={formData.securityContract} />
-              <Input label="Kode Efek" name="securityCode" disabled value={formData.securityCode} />
-              <Input label="Squence" name="securitySequence" disabled value={formData.securitySequence} />
-              <Input label="Series" name="securitySeries" disabled value={formData.securitySeries} />
-              <Input label="Phase" name="securityPhase" disabled value={formData.securityPhase} />
+              <Input label="Nama Penerbit" name="investeeName" hasError={isError('investeeName')} onChange={handleChange('investeeName')} value={formData.investeeName} />
+              <Input label="Nama Legal Penerbit" name="investeeNameLegal" hasError={isError('investeeNameLegal')}  onChange={handleChange('investeeNameLegal')} value={formData.investeeNameLegal} />
+
+              <Select 
+                label="Tipe Efek" 
+                hasError={isError('securityType')} name="securityType"
+                value={formData.securityType}  disabled={hasSecurityType}
+                onChange={handleChange('securityType')}
+              >
+                  <option value="">-- Pilih Tipe Efek --</option>
+                  <option value={SecurityType.SAHAM}>Saham</option>
+                  <option value={SecurityType.SUKUK}>Sukuk</option>
+                  <option value={SecurityType.OBLIGASI}>Obligasi</option>
+              </Select>
+              <Select 
+                label="Kontrak Efek" 
+                hasError={isError('securityContract')} name="securityContract"
+                value={formData.securityContract}  disabled={isEditMode}
+                onChange={handleChange('securityContract')}
+              >
+                  <option value="">-- Pilih Kontrak Efek --</option>
+                  <option value={SecurityContract.IJARAH}>Ijarah</option>
+                  <option value={SecurityContract.MURABAHAH}>Murabahah</option>
+                  <option value={SecurityContract.MUDHARABAH}>Mudharabah</option>
+                  <option value={SecurityContract.MUSYARAKAH}>Musyarakah</option>
+                  <option value={SecurityContract.WAKALAH}>Wakalah</option>
+                  <option value={SecurityContract.WAKALAH_BIL_ISTITSMAR}>Wakalah Bil Istitsmar</option>
+                  <option value={SecurityContract.ISTISNA}>Istisna</option>
+                  <option value={SecurityContract.MUSYARAKAH_MUTANAQISHAH}>Musyarakah Mutanaqishah</option>
+
+                  <option value={SecurityContract.SHARE_PURCHASE}>Share Purchase</option>
+                  <option value={SecurityContract.SHARE_SUBSCRIPTION}>Share Subscription</option>
+                  <option value={SecurityContract.SHARE_BUYBACK}>Share Buyback</option>
+                  <option value={SecurityContract.CONVERTIBLE_NOTE}>Convertible Note</option>
+
+                  <option value={SecurityContract.UNSPECIFIED}>Belum Ditentukan</option>
+                  <option value={SecurityContract.OTHER}>Lainnya</option>
+              </Select>
+              
+              <Input 
+                label="Kode Efek" 
+                name="securityCode" 
+                disabled={hasSecurityCode} 
+                value={formData.securityCode ?? ''} 
+                onChange={handleChange('securityCode')}
+              />
+              <Input label="Squence" name="securitySequence" value={formData.securitySequence} onChange={handleChange('securitySequence')}/>
+              <Input label="Series" name="securitySeries" value={formData.securitySeries}  onChange={handleChange('securitySeries')}/>
+              <Input label="Phase" name="securityPhase" value={formData.securityPhase} onChange={handleChange('securityPhase')}/>
+              
+              <TextArea label="Alamat" name="investeeAddress" colSpan="2" value={formData.investeeAddress} hasError={isError('investeeAddress')}  onChange={handleChange('investeeAddress')}/>
+              <Input label="Telepon" name="investeeTelephone" value={formData.investeeTelephone} hasError={isError('investeeTelephone')}  onChange={handleChange('investeeTelephone')}/>
+              <Input label="Kode Pos" name="investeePostalCode" value={formData.investeePostalCode} hasError={isError('investeePostalCode')}  onChange={handleChange('investeePostalCode')}/>
              
               
             </FormGroup>
@@ -480,16 +651,23 @@ const durationBig = new Big(duration.toString());
             <FormGroup title="JANGKA WAKTU">
               <Input type="date" label="Waktu Mulai Efek" disabled={isEditMode} 
                       hasError={isError('contractStartDate')} value={formData.contractStartDate} 
-                      name="contractStartDate" onChange={handleChange('contractStartDate')} />
+                      name="contractStartDate" onChange={handleTimeDurationChange('contractStartDate')} />
 
               <Input type="date" label="Waktu Selesai Efek" disabled={isEditMode} 
                       hasError={isError('contractEndDate')} value={formData.contractEndDate} 
-                      name="contractEndDate" onChange={handleChange('contractEndDate')} />
+                      name="contractEndDate" onChange={handleTimeDurationChange('contractEndDate')} />
 
-              <Input label="Contract Duration (Months)" disabled 
-                      name="contractDurationInMonths"
-                      hasError={isError('contractDurationInMonths')} 
-                      value={formData.contractDurationInMonths === 0 ? "" : formData.contractDurationInMonths} />
+            
+              <Input label="Contract Duration (Months)" 
+                    type="number" disabled={isDurationDisabled}
+                    name="contractDurationInMonths"
+                    hasError={isError('contractDurationInMonths')} 
+                    value={
+                      formData.contractDurationInMonths === 0 || formData.contractDurationInMonths === null
+                        ? ""
+                        : formData.contractDurationInMonths
+                    }
+                    onChange={handleTimeDurationChange('contractDurationInMonths')} />
               
               <Select label="Contract Status" hasError={isError('contractStatus')} 
                       value={formData.contractStatus ?? ""} name="contractStatus"
@@ -627,9 +805,9 @@ const durationBig = new Big(duration.toString());
                       value={formData.contractEscrowBank ?? ''} 
                       onChange={(e: any) => setFormData({...formData, contractEscrowBank: e.target.value})}>
                 <option value="">-- Pilih Escrow Bank --</option>
-                <option value="BJB Syariah">BJB Syariah</option>
-                <option value="Bank Mega Syariah">Bank Mega Syariah</option>
-                <option value="Bank Keb Hana">Bank Keb Hana</option>
+                <option value="BJBS">BJB Syariah</option>
+                <option value="Mega Syariah">Bank Mega Syariah</option>
+                <option value="KEB Hana">Bank Keb Hana</option>
               </Select>
               <Input label="Rekening Escrow" inputType="alphanumeric" 
                       hasError={isError('contractEscrowAccount')} name="contractEscrowAccount"

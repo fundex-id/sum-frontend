@@ -12,14 +12,17 @@ import { formatDate } from '../../../../utils/date';
 import ReceiptStatusBadge from '../../../repayment-receipt/components/badge/ReceiptStatusBadge';
 import { toSafeBig } from '../../../../utils/number';
 import { Big } from 'big.js';
+import { InvoiceRemainingBalanceResponse } from '../../dtos/repayment-schedule.dto';
+import { ReceiptStatus } from '../../../repayment-receipt/types/repayment-receipt.enum';
 
 interface ReceiptPanelProps {
   receipts: RepaymentReceiptDetailResponse[];
   invoiceSummary: InvoiceSummaryWithPenaltyBig;
+  invoiceRemaining: InvoiceRemainingBalanceResponse;
   onDataChanged?: ()=> void;
 }
 
-export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }: ReceiptPanelProps) {
+export default function ReceiptPanel({ receipts, invoiceSummary, invoiceRemaining, onDataChanged }: ReceiptPanelProps) {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const { isEditMode } = useGlobalMode();
   const { openPanel } = useSidePanel();
@@ -54,8 +57,10 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
               <th className="py-2 px-2 font-bold text-center">Metode Pembayaran</th>
               <th className="py-2 px-2 font-bold text-center">Notes</th>
               <th className="py-2 px-2 font-bold text-right">Jumlah Dana Diterima</th>
-              {isEditMode && <th className="py-2.5 px-3 font-bold text-center">Edit</th>}
               <th className="w-8 py-2 px-2"></th>
+              <th className="w-18 py-2 px-2 font-bold text-center">Dok</th>
+              {isEditMode && <th className="py-2.5 px-3 font-bold text-center">Edit</th>}
+              
               
             </tr>
           </thead>
@@ -79,7 +84,7 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
                     >
                       <td className="py-2 px-2">{idx + 1}</td>
                       <td className="py-2 px-2 text-center">
-                        <ReceiptStatusBadge status={rcpt.receiptStatus} size="sm"/>
+                        <ReceiptStatusBadge status={rcpt.receiptStatus||null} size="sm"/>
                       </td>
                       <td className="py-2 px-2">{formatDate(rcpt.receiptDate)}</td>
                       <td className="py-2 px-2 text-center">BANK TRANSFER</td>
@@ -87,30 +92,7 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
                       <td className="py-2 px-2 text-right font-mono font-bold text-emerald-600">
                         <FeeWithTax base={rcpt.receiptTotalWithTax} withRp={false} />
                       </td>
-                      
-                      {isEditMode && (
-                        <td className="py-2 px-2 text-right align-top">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openPanel(
-                                <RepaymentReceiptEditWrapper receiptId={rcpt.id} invoiceSummary={invoiceSummary} onSuccess={onDataChanged}/>
-                              );
-                            }}
-                            className="text-[12px] font-semibold bg-amber-50 mx-auto text-amber-700 border border-amber-200 px-1 py-1 rounded-lg hover:bg-amber-100 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200 flex items-center gap-2"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                              />
-                            </svg>
-                          </button>
-                        </td>
-                      )}
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-3 px-3 text-left">
                         <div className="flex items-center justify-center">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -126,6 +108,50 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
                           </svg>
                         </div>
                       </td>
+                      <td className="py-2 px-2 align-top text-center">
+                          <div className="mt-0.5 flex justify-center">
+                            <a 
+                              href={rcpt.receiptDocumentUrl ?? "#"} 
+                              target={rcpt.receiptDocumentUrl ? "_blank" : undefined} 
+                              rel="noopener noreferrer" 
+                              className={`inline-flex items-center justify-center p-1.5 rounded transition-colors ${
+                                rcpt.receiptDocumentUrl
+                                  ? "bg-blue-50 text-blue-600 hover:bg-blue-100" 
+                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              }`}
+                              title={rcpt.receiptDocumentUrl ? "Lihat Dokumen" : "Dokumen Tidak Tersedia"}
+                              onClick={(e) => !rcpt.receiptDocumentUrl&& e.preventDefault()} // Mencegah scroll ke atas jika klik '#'
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </a>
+                          </div>
+                        </td>
+                      {isEditMode && (
+                        <td className="py-2 px-2 text-right align-top">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPanel(
+                                <RepaymentReceiptEditWrapper receiptId={rcpt.id} invoiceSummary={invoiceSummary} invoiceRemaining={invoiceRemaining} onSuccess={onDataChanged}/>
+                              );
+                            }}
+                            className="text-[12px] font-semibold bg-amber-50 mx-auto text-amber-700 border border-amber-200 px-1 py-1 rounded-lg hover:bg-amber-100 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-200 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </button>
+                        </td>
+                      )}
+                      
                     </tr>
 
                     {/* EXPANDED ROW DETAIL */}
@@ -198,17 +224,6 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
                                   </div>
                                 )}
 
-                                {toSafeBig(rcpt?.receiptFeeOther).gt(0) && (
-                                  <div className="flex justify-between items-center rounded">
-                                    <span className="font-normal text-slate-900">Biaya Lain-lain</span>
-                                    <FeeWithTax
-                                      base={Number(rcpt.receiptFeeOther)}
-                                      tax={Number(rcpt.receiptFeeOtherTax)}
-                                      size="sm"
-                                    />
-                                  </div>
-                                )}
-
                                 {toSafeBig(rcpt?.receiptSinkingFund).gt(0) && (
                                   <div className="flex justify-between items-center rounded">
                                     <span className="font-normal text-slate-900">Cicilan Sinking Fund</span>
@@ -220,6 +235,17 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
                                   <div className="flex justify-between items-center rounded">
                                     <span className="font-normal text-slate-900">Imbal hasil / Kupon</span>
                                     <FeeWithTax base={toSafeBig(rcpt.receiptYield)} size="sm" />
+                                  </div>
+                                )}
+
+                                {toSafeBig(rcpt?.receiptFeeOther).gt(0) && (
+                                  <div className="flex justify-between items-center rounded">
+                                    <span className="font-normal text-slate-900">Biaya Lain-lain</span>
+                                    <FeeWithTax
+                                      base={Number(rcpt.receiptFeeOther)}
+                                      tax={Number(rcpt.receiptFeeOtherTax)}
+                                      size="sm"
+                                    />
                                   </div>
                                 )}
 
@@ -267,16 +293,34 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
           </tbody>
           <tfoot>
             {receipts.length > 0 && (
-                <tr className="bg-slate-50/50 border-t border-slate-200 font-bold">
-                  <td colSpan={5} className="py-3 px-2 text-right text-slate-700 text-xs uppercase">
-                    Total Pembayaran Diterima
-                  </td>
-                  <td className="py-3 px-2 text-right font-mono text-slate-700 text-xs">
-                  {formatRupiah(receipts.reduce((sum, item) => sum.plus(toSafeBig(item.receiptTotalWithTax || '0')), new Big('0')) )}
-                  </td>
-                  <td colSpan={2}></td>
-                  {isEditMode && (<td></td>)}
-                </tr>
+              <>
+                  <tr className="bg-slate-50/50 border-t border-slate-200 font-bold">
+                      <td colSpan={5} className="py-3 px-2 text-right text-slate-700 text-xs uppercase">
+                        Total Pembayaran Diterima
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono text-slate-700 text-xs">
+                      {formatRupiah(
+                        receipts
+                          .filter(item => item.receiptStatus === ReceiptStatus.SUCCESS)
+                          .reduce((sum, item) => sum.plus(toSafeBig(item.receiptTotalWithTax || '0')), new Big('0'))
+                      )}
+                      </td>
+                      <td colSpan={2}></td>
+                      {isEditMode && (<td></td>)}
+                  </tr>
+                  {toSafeBig(invoiceRemaining?.invoiceTotalWithTax).gt(0) && (
+                  <tr className="bg-slate-50/50 border-t border-slate-200 font-bold">
+                      <td colSpan={5} className="py-3 px-2 text-right text-amber-700  text-xs uppercase">
+                        Sisa Pembayaran
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono text-amber-700  text-xs">
+                      {formatRupiah(invoiceRemaining.invoiceTotalWithTax || new Big('0')) }
+                      </td>
+                      <td colSpan={2}></td>
+                      {isEditMode && (<td></td>)}
+                  </tr>
+                  )}
+              </>
               )}
               
 
@@ -287,7 +331,7 @@ export default function ReceiptPanel({ receipts, invoiceSummary, onDataChanged }
               <div className="border-t-2 border-slate-200 flex items-center justify-center">
               <button
                   type="button"
-                  onClick={() => openPanel(<RepaymentReceiptCreateWrapper invoiceSummary={invoiceSummary} onSuccess={onDataChanged}/>)}
+                  onClick={() => openPanel(<RepaymentReceiptCreateWrapper invoiceSummary={invoiceSummary} invoiceRemaining={invoiceRemaining} onSuccess={onDataChanged}/>)}
                   className="w-11/12 py-4 m-4 last:flex items-center justify-center border-2 border-dashed rounded-lg border-amber-200 bg-amber-50/40 hover:bg-amber-100 text-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-200 group">
                   <div className="bg-amber-100 p-1 rounded-full group-hover:bg-amber-500 transition-colors">
                     <svg className="w-4 h-4 text-amber-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

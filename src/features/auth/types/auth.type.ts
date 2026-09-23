@@ -34,6 +34,3 @@ export interface Tokens {
 export interface UsersProfile 
 extends UsersIdentity,
         UsersAttribute {}
-
-
-

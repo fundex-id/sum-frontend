@@ -7,14 +7,16 @@ import { repaymentReceiptService } from '../../services/repaymentReceiptService'
 import { InvoiceSummaryWithPenaltyBig } from '../../../repayment-schedule/types/repayment-schedule.type';
 import { RepaymentReceiptEditFormResponse, RepaymentReceiptFormRequest } from '../../dtos/repayment-receipt.dto';
 import { mapDtoToFormData } from '../../../../utils/form';
+import { InvoiceRemainingBalanceResponse } from '../../../repayment-schedule/dtos/repayment-schedule.dto';
 
 interface Props {
   receiptId: string; // Mengikuti instruksi GET & PUT URL kamu
   invoiceSummary: InvoiceSummaryWithPenaltyBig;
+  invoiceRemaining: InvoiceRemainingBalanceResponse;
   onSuccess?: ()=> void;
 }
 
-export default function RepaymentReceiptEditWrapper({ receiptId, invoiceSummary, onSuccess }: Props) {
+export default function RepaymentReceiptEditWrapper({ receiptId, invoiceSummary, invoiceRemaining, onSuccess }: Props) {
   const { closePanel } = useSidePanel();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<RepaymentReceiptFormRequest | null>(null);
@@ -144,6 +146,7 @@ export default function RepaymentReceiptEditWrapper({ receiptId, invoiceSummary,
           mode='edit'
           initialData={initialData}
           invoiceSummary={invoiceSummary}
+          invoiceRemaining={invoiceRemaining}
           onSubmit={handleEditSubmit} 
           onCancel={closePanel}
           onDelete={handleDelete}
