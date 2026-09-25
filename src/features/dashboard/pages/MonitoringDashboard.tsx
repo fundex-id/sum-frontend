@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import { monitoringDashboardService } from '../services/monitoringDashboardService';
 import {
   CollectionDueItem,
   CollectionScheduleItem,
-  InvoiceStatus,
   MonitoringSummaryResponse,
   RepaymentReceiptItem,
-  RepaymentReceiptStatus,
   RevenueComparisonItem,
 } from '../dtos/monitoring-dashboard.dto';
+import ReceiptStatusBadge from '../../repayment/receipt/components/badges/ReceiptStatusBadge';
+
+import { InvoiceStatus } from '../../repayment/schedule/types/repayment-schedule.enum';
+import InvoiceStatusDot from '../components/indicators/invoice-status-dot';
+
+
 
 // =========================================================================
 // HELPERS & KONSTANTA
@@ -40,10 +45,12 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-const WEEKDAY_LABELS = ['M', 'S', 'S', 'R', 'K', 'J', 'S']; // Minggu-first
+const WEEKDAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
-// Palet warna status (disadur dari badge invoice)
-const STATUS_STYLE: Record<InvoiceStatus, string> = {
+// Palet warna LATAR SEL KALENDER (bukan badge). Badge invoice/receipt sudah punya
+// palet warnanya sendiri di komponen masing-masing (InvoiceStatusBadge / ReceiptStatusBadge);
+// yang ini khusus dipakai untuk mewarnai kotak tanggal di kalender jadwal pembayaran.
+const STATUS_CELL_STYLE: Record<InvoiceStatus, string> = {
   DRAFT: 'bg-slate-100 text-slate-700 border-slate-300',
   UNPAID: 'bg-amber-50 text-amber-700 border-amber-300',
   PARTIAL: 'bg-lime-50 text-lime-700 border-lime-400',
@@ -53,37 +60,18 @@ const STATUS_STYLE: Record<InvoiceStatus, string> = {
   WRITE_OFF: 'bg-slate-500 text-white border-slate-600',
 };
 
-const STATUS_DOT: Record<InvoiceStatus, string> = {
-  DRAFT: 'bg-slate-400',
-  UNPAID: 'bg-amber-400',
-  PARTIAL: 'bg-lime-500',
-  PAID: 'bg-emerald-500',
-  OVERDUE: 'bg-rose-500',
-  VOID: 'bg-zinc-400',
-  WRITE_OFF: 'bg-slate-500',
-};
-
-const STATUS_LABEL: Record<InvoiceStatus, string> = {
-  DRAFT: 'Draft',
-  UNPAID: 'Belum Dibayar',
-  PARTIAL: 'Sebagian',
-  PAID: 'Lunas',
-  OVERDUE: 'Terlambat',
-  VOID: 'Void',
-  WRITE_OFF: 'Write Off',
-};
-
 // Urutan prioritas untuk menentukan warna sel tanggal jika ada beberapa status di hari yang sama
-const STATUS_PRIORITY: InvoiceStatus[] = ['OVERDUE', 'UNPAID', 'PARTIAL', 'DRAFT', 'PAID', 'VOID', 'WRITE_OFF'];
+const STATUS_PRIORITY: InvoiceStatus[] = 
+          [InvoiceStatus.OVERDUE, 
+            InvoiceStatus.UNPAID,
+            InvoiceStatus.PARTIAL,
+            InvoiceStatus.PAID,
+            InvoiceStatus.DRAFT,
+            InvoiceStatus.VOID,
+            InvoiceStatus.WRITE_OFF];
 
 const dominantStatus = (items: CollectionDueItem[]): InvoiceStatus =>
-  STATUS_PRIORITY.find((s) => items.some((i) => i.status === s)) ?? 'DRAFT';
-
-const RECEIPT_STATUS_STYLE: Record<RepaymentReceiptStatus, { cls: string; label: string }> = {
-  PAID: { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Lunas' },
-  PARTIAL: { cls: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Sebagian' },
-  LATE: { cls: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Terlambat' },
-};
+  STATUS_PRIORITY.find((s) => items.some((i) => i.status === s)) ?? InvoiceStatus.DRAFT;
 
 export default function MonitoringDashboard() {
   const [summary, setSummary] = useState<MonitoringSummaryResponse | null>(null);
@@ -101,13 +89,10 @@ export default function MonitoringDashboard() {
   const month = today.getMonth(); // 0-11
   const monthLabel = today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstWeekday = new Date(year, month, 1).getDay(); // 0 = Minggu
+  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = Senin
 
-  // Breadcrumb di-set sekali saat mount (bukan saat render, supaya tidak memicu re-render loop)
-  useEffect(() => {
-    setBreadcrumbs([{ label: 'DASHBOARD', path: '/dashboard/monitoring' }]);
-  }, [setBreadcrumbs]);
-
+  // 2. Gunakan useEffect untuk memanggil Service
+  // Breadcrumb di-set setelah data berhasil dimuat, mengikuti pola RepaymentDashboardPage
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
@@ -120,21 +105,23 @@ export default function MonitoringDashboard() {
         monitoringDashboardService.getLatestReceipts(5),
       ]);
 
-      setSummary(summaryRes?.data || null);
-      setRevenue(revenueRes?.data || []);
-      setSchedule(scheduleRes?.data || []);
+      setSummary(summaryRes?.data?.item || null);
+      setRevenue(revenueRes?.data?.items || []);
+      setSchedule(scheduleRes?.data?.items || []);
       setReceipts(receiptRes?.data?.items || []);
+
+      setBreadcrumbs([{ label: 'DASHBOARD', path: '/dashboard/monitoring' }]);
     } catch (err: any) {
       console.error('Gagal memuat data monitoring dashboard:', err);
       setError(err?.response?.data?.message || 'Terjadi kesalahan saat memuat data dari server.');
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [year, month]); // Array dependensi useCallback: hanya berubah kalau bulan/tahun berjalan berganti
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+  }, [fetchDashboardData]); // Dijalankan sekali saat komponen di-mount (dimuat)
 
   // ---- Derived: kalender ----
   const scheduleByDay = schedule.reduce<Record<number, CollectionScheduleItem>>((acc, item) => {
@@ -171,7 +158,7 @@ export default function MonitoringDashboard() {
       <div className="mt-12 pb-1">
         <h1 className="text-xl font-bold tracking-tight text-slate-700">Dashboard Monitoring</h1>
         <p className="text-xs text-slate-400 mt-0.5">
-          Dashboard Sistem Untuk Monitoring (SUM) Securities Crowdfunding FundEx Indonesia
+          Sistem Untuk Monitoring (SUM) FundEx Indonesia
         </p>
       </div>
 
@@ -197,7 +184,7 @@ export default function MonitoringDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Portofolio */}
             <div className="bg-white p-4 rounded-xl border border-slate-200/60 shadow-xs">
-              <div className="text-[11px] font-semibold text-slate-400 tracking-wider uppercase">Total Portofolio</div>
+              <div className="text-[11px] font-semibold text-slate-400 tracking-wider uppercase">Portofolio Aktif</div>
               <div className="text-xl font-bold text-slate-700 mt-1 flex flex-wrap items-baseline gap-1 font-mono">
                 {summary?.totalPenerbit ?? 0}
                 <span className="text-[10px] font-normal text-slate-400 font-sans">Penerbit</span>
@@ -367,7 +354,7 @@ export default function MonitoringDashboard() {
                   const isToday = dayNumber === today.getDate();
 
                   const cellStyle = entry
-                    ? `${STATUS_STYLE[dominantStatus(entry.items)]} border font-semibold`
+                    ? `${STATUS_CELL_STYLE[dominantStatus(entry.items)]} border font-semibold`
                     : 'bg-slate-50/60 text-slate-500 hover:bg-slate-100/80';
 
                   // Tooltip menyesuaikan kolom supaya tidak keluar dari panel
@@ -395,9 +382,8 @@ export default function MonitoringDashboard() {
                               <li key={i} className="text-[10px] leading-snug">
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="font-semibold">{it.investeeName}</span>
-                                  <span className="flex items-center gap-1 text-slate-300 shrink-0">
-                                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[it.status]}`}></span>
-                                    {STATUS_LABEL[it.status]}
+                                  <span className="text-slate-300 shrink-0">
+                                    <InvoiceStatusDot status={it.status} size="xs" />
                                   </span>
                                 </div>
                                 <div className="text-slate-300">{it.securityName}</div>
@@ -425,13 +411,20 @@ export default function MonitoringDashboard() {
               {legendStatuses.length > 0 && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[10px] text-slate-400">
                   {legendStatuses.map((s) => (
-                    <div key={s} className="flex items-center gap-1">
-                      <span className={`w-2 h-2 rounded-full ${STATUS_DOT[s]}`}></span>
-                      {STATUS_LABEL[s]}
-                    </div>
+                    <InvoiceStatusDot key={s} status={s} size="sm" />
                   ))}
                 </div>
               )}
+
+              {/* Link ke halaman kalender penuh */}
+             <div className="flex justify-end mt-3 pt-2 border-t border-slate-100">
+               <Link
+                 to="/repayment/calendar"
+                 className="text-[11px] font-semibold text-blue-950 hover:text-blue-800 hover:underline transition-colors"
+               >
+                 Lihat lebih lengkap &gt;&gt;
+               </Link>
+             </div>
             </div>
           </div>
 
@@ -450,7 +443,7 @@ export default function MonitoringDashboard() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-2 pr-4 font-semibold">No. Receipt</th>
+                    <th className="py-2 pr-4 font-semibold">Kode Efek</th>
                     <th className="py-2 pr-4 font-semibold">Investee</th>
                     <th className="py-2 pr-4 font-semibold">Security</th>
                     <th className="py-2 pr-4 font-semibold">Tanggal Bayar</th>
@@ -466,23 +459,18 @@ export default function MonitoringDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    latestReceipts.map((r) => {
-                      const status = RECEIPT_STATUS_STYLE[r.status];
-                      return (
-                        <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-2.5 pr-4 font-mono text-slate-500">{r.receiptNo}</td>
-                          <td className="py-2.5 pr-4 font-semibold text-slate-700">{r.investeeName}</td>
-                          <td className="py-2.5 pr-4 text-slate-500">{r.securityName}</td>
-                          <td className="py-2.5 pr-4 text-slate-500">{formatDate(r.paidAt)}</td>
-                          <td className="py-2.5 pr-4 text-right font-mono text-slate-700">{formatRupiah(r.amount)}</td>
-                          <td className="py-2.5 text-center">
-                            <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-md border ${status.cls}`}>
-                              {status.label}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
+                    latestReceipts.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-2.5 pr-4 font-semibold font-mono text-slate-500">{r.securityCode}</td>
+                        <td className="py-2.5 pr-4 text-slate-700">{r.investeeName}</td>
+                        <td className="py-2.5 pr-4 text-slate-500">{r.securityName}</td>
+                        <td className="py-2.5 pr-4 text-slate-500">{formatDate(r.paidAt)}</td>
+                        <td className="py-2.5 pr-4 text-right font-mono text-slate-700">{formatRupiah(r.amount)}</td>
+                        <td className="py-2.5 text-center">
+                          <ReceiptStatusBadge status={r.status} size="xs" />
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { resolveS3Url } from '../../utils/url';
 
 const colSpanClasses: Record<string, string> = {
   "1": "col-span-1",
@@ -148,7 +149,7 @@ export const FileInput = ({
       {oldFile && (
         <div className="mt-1.5">
           <a 
-            href={oldFile} 
+            href={resolveS3Url(oldFile) ?? '#'} 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 hover:text-amber-700 hover:underline transition-colors"

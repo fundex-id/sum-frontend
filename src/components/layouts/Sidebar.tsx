@@ -34,7 +34,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       subMenus: [
         { name: 'Daftar Penerbit', path: '/repayment/securities' },
         { name: 'Jadwal Pembayaran', path: '/repayment/calendar' },
-        { name: 'Riwayat Pembayaran', path: '/repayment/receipts' },
+        // { name: 'Riwayat Pembayaran', path: '/repayment/receipts' },
       ]
     },
     // { 

@@ -1,4 +1,4 @@
-import { ContractStatus, SecurityType } from "../features/repayment-security/types/repayment-security.enum";
+import { ContractStatus, SecurityType } from "../features/repayment/security/types/repayment-security.enum";
 
  // Status Styling Generator
  export const getStatusStyle = (status: ContractStatus | null) => {

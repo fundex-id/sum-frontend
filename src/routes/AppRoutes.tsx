@@ -6,12 +6,12 @@ import MonitoringDashboard from '../features/dashboard/pages/MonitoringDashboard
 import { BreadcrumbProvider } from '../contexts/BreadcrumbContext';
 
 // 1. IMPORT Halaman Repayment Dashboard yang Baru Kita Bikin
-import RepaymentDashboardPage from '../features/repayment-security/pages/RepaymentDashboardPage';
-import RepaymentDetailPage from '../features/repayment-security/pages/RepaymentDetailPage';
-import RepaymentSchedulePage from '../features/repayment-schedule/pages/RepaymentSchedulePage';
-import SecurityCollateralPage from '../features/security-collateral/pages/SecurityCollateralPage';
+import RepaymentDashboardPage from '../features/repayment/security/pages/RepaymentDashboardPage';
+import RepaymentDetailPage from '../features/repayment/security/pages/RepaymentDetailPage';
+import RepaymentSchedulePage from '../features/repayment/schedule/pages/RepaymentSchedulePage';
+import SecurityCollateralPage from '../features/repayment/collateral/pages/SecurityCollateralPage';
 import { GlobalModeProvider } from '../contexts/GlobalModeContext';
-import ScheduleCalendarPage from '../features/repayment-schedule/pages/ScheduleCalendarPage';
+import ScheduleCalendarPage from '../features/repayment/schedule/pages/ScheduleCalendarPage';
 import { AuthProvider } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/guards/ProtectedRoute';
 
