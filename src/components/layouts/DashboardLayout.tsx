@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { SidePanelProvider } from '../../contexts/SidePanelContext';
 import SidePanelLayout from './SidePanelLayout';
+import { tokenStorage } from '../../lib/storage/tokenStorage';
 
 export default function DashboardLayout() {
-  const token = localStorage.getItem('sum_pp_token');
+  const token = tokenStorage.getAccessToken();
   
   // 1. STATE MANAGEMENT: Mengontrol status collapse secara global di level layout
   const [isCollapsed, setIsCollapsed] = useState(false);
