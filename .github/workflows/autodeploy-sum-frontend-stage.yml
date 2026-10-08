@@ -1,0 +1,88 @@
+name: autodeploy-sum-frontend-stage
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+# Satu deploy pada satu waktu, yang berikutnya antre
+concurrency:
+  group: deploy-stage-sum-frontend
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/fundex-id/sum-frontend
+  RELEASE_NAME: sum-frontend-stage
+  NAMESPACE: sum-stage
+  VALUES_FILE: sum-frontend-stage-values.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: vars
+        run: echo "tag=canary-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=https://api-sum-canary.fundex.id
+            VITE_S3_STORAGE_BASE_URL=https://nos.wjv-1.neo.id/canary
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
+            ${{ env.IMAGE }}:canary
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, k3s-stage]
+    env:
+      TAG: ${{ needs.build.outputs.tag }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: /opt/fundex/cluster/sum-frontend
+    steps:
+      - name: Helm lint
+        run: helm lint . -f "$VALUES_FILE"
+
+      - name: Helm dry-run
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" . \
+            -n "$NAMESPACE" -f "$VALUES_FILE" \
+            --set frontend.image="$IMAGE:$TAG" \
+            --dry-run
+
+      - name: Helm upgrade
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" . \
+            -n "$NAMESPACE" -f "$VALUES_FILE" \
+            --set frontend.image="$IMAGE:$TAG" \
+            --atomic --timeout 5m
+
+      - name: Status
+        run: |
+          helm status "$RELEASE_NAME" -n "$NAMESPACE"
+          kubectl get pods -n "$NAMESPACE"
+          kubectl get deploy "$RELEASE_NAME-frontend" -n "$NAMESPACE" \
+            -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
