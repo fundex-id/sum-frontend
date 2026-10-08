@@ -269,7 +269,7 @@ export default function LoginPage() {
             {/* Input Email */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                Email Perusahaan
+                Email
               </label>
 
               <input
