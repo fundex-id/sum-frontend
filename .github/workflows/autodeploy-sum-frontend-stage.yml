@@ -84,5 +84,5 @@ jobs:
         run: |
           helm status "$RELEASE_NAME" -n "$NAMESPACE"
           kubectl get pods -n "$NAMESPACE"
-          kubectl get deploy "$RELEASE_NAME-frontend" -n "$NAMESPACE" \
+          kubectl get deploy "$RELEASE_NAME" -n "$NAMESPACE" \
             -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
