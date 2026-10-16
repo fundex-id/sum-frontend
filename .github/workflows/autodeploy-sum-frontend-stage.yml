@@ -44,7 +44,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_BASE_URL=https://api-sum-canary.fundex.id
-            VITE_S3_STORAGE_BASE_URL=https://nos.wjv-1.neo.id/canary
+            VITE_S3_STORAGE_BASE_URL=https://nos.wjv-1.neo.id/sumbucketpublic/canary
           tags: |
             ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
             ${{ env.IMAGE }}:canary
