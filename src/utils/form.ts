@@ -92,12 +92,11 @@ export const isEmptyField = (field: any, type: FormInputType = 'input'): boolean
   // 2. Evaluasi spesifik berdasarkan tipe
   switch (type) {
     case 'numeric-input': // Disesuaikan menjadi 'numeric-input'
-      // Dianggap belum diisi jika nilainya 0 (number) atau "0" (string)
-      if (field === 0 || field === '0') return true;
-      // Tangani juga jika user mengetik lalu menghapus isi input (string kosong)
+      // Tangani jika user mengetik lalu menghapus isi input (string kosong)
       if (typeof field === 'string' && field.trim() === '') return true;
       // Opsional: Cek NaN jika form numeric sempat dikonversi secara keliru
       if (typeof field === 'number' && Number.isNaN(field)) return true;
+      // Nilai 0 (number) atau "0" (string) dianggap VALID — bukan kosong
       return false;
 
     case 'date':

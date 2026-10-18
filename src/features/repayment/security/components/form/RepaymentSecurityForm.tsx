@@ -149,7 +149,9 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
   }, [formData.contractStartDate, formData.contractEndDate]);
 
   // GROUP 3 KALKULATOR
-  const handleGroup3Change = (field: keyof RepaymentSecurityFormRequest, val: number) => {
+
+  const handleGroup3Change = (field: keyof RepaymentSecurityFormRequest, val: number | null) => {
+    const num = val ?? 0; // dipakai untuk perhitungan saja
 
     const prefixField = field.replace(/Percentage.*$/, '');
     if (validationErrors.some(errorKey => errorKey.includes(prefixField))) {
@@ -189,13 +191,13 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
         // Logika Lama: fund > 0 ? (val / fund) * 100 : 0
         // Logika Big.js: Mengonversi val ke string, dibagi fund, dikali 100
         newData[pctField] = fund.gt(0)
-          ? toSafeBig(val.toFixed(maxPrecision)).div(fund).times(100).round(maxPrecisionPct).toString() // Menghasilkan string persentase (4 desimal)
+          ? toSafeBig(num.toFixed(maxPrecision)).div(fund).times(100).round(maxPrecisionPct).toString() // Menghasilkan string persentase (4 desimal)
           : "0";
           
       } else if (field === pctField) {
         // Logika Lama: (val / 100) * fund
         // Logika Big.js: Mengonversi val ke string, dibagi 100, dikali fund
-        newData[feeField] = toSafeBig(val.toFixed(maxPrecisionPct)).div(100).times(fund).round(maxPrecision).toString(); // Menghasilkan string nominal uang (2 desimal)
+        newData[feeField] = toSafeBig(num.toFixed(maxPrecisionPct)).div(100).times(fund).round(maxPrecision).toString(); // Menghasilkan string nominal uang (2 desimal)
       }
 
       
@@ -216,7 +218,7 @@ export default function RepaymentSecurityForm ({ mode, initialData, onSubmit, on
 const durationBig = new Big(duration.toString());
 
   if (field === 'contractFeeMonitoringMonthly') {
-    const valBig = new Big(val.toString());
+    const valBig = new Big(num.toString());
     
     const pctMonthly = fund.gt(0) ? valBig.div(fund).times(100) : new Big('0');
     newData.contractFeeMonitoringPercentageMonthly = pctMonthly.round(maxPrecisionPct).toString();
@@ -224,7 +226,7 @@ const durationBig = new Big(duration.toString());
     newData.contractFeeMonitoring = feeMonitoring.round(maxPrecision).toString();
     newData.contractFeeMonitoringPercentage = pctMonthly.times(durationBig).round(maxPrecisionPct).toString();
   } else if (field === 'contractFeeMonitoringPercentageMonthly') {
-    const valBig = toSafeBig(val.toString());
+    const valBig = toSafeBig(num.toString());
     const feeMonthly = valBig.div(100).times(fund);
     newData.contractFeeMonitoringMonthly = feeMonthly.round(maxPrecision).toString();
     newData.contractFeeMonitoring = feeMonthly.times(durationBig).round(maxPrecision).toString();

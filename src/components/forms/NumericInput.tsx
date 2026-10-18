@@ -1,77 +1,58 @@
 import React, { useState, useEffect } from 'react';
 
+type NumericValue = number | string | null | undefined;
+
 interface NumericInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
-  value: number;
-  onValueChange: (val: number) => void;
+  value: NumericValue;
+  onValueChange: (val: number | null) => void; // null = kosong
   hasError?: boolean;
 }
 
-export const NumericInput: React.FC<NumericInputProps> = ({ 
-  value, 
-  onValueChange, 
-  hasError, 
-  className,
-  disabled,
-  ...props 
-}) => {
-  const [displayValue, setDisplayValue] = useState('');
+const isBlank = (v: NumericValue) =>
+  v === '' || v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v));
 
-  const formatToIndonesian = (val: number) => {
-    if (val === 0 || !val) return '';
-    const parts = val.toString().split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return parts.join(',');
-  };
+const formatToIndonesian = (val: NumericValue): string => {
+  if (isBlank(val)) return '';          // 0 / "0" TIDAK dianggap kosong
+  const [intPart, decPart] = String(val).split('.');
+  const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decPart !== undefined ? `${intFmt},${decPart}` : intFmt;
+};
+
+const parseDisplay = (display: string): number | null => {
+  if (display === '') return null;
+  const n = parseFloat(display.replace(/\./g, '').replace(',', '.'));
+  return Number.isNaN(n) ? null : n;
+};
+
+export const NumericInput: React.FC<NumericInputProps> = ({
+  value, onValueChange, hasError, className, disabled, onBlur, ...props
+}) => {
+  const [displayValue, setDisplayValue] = useState(() => formatToIndonesian(value));
 
   useEffect(() => {
-    // 1. Ekstrak nilai asli dari displayValue saat ini
-    const currentNumericString = displayValue.replace(/\./g, '').replace(/,/g, '.');
-    const currentParsed = parseFloat(currentNumericString) || 0;
-
-    // 2. Cegah penimpaan koma (,) saat sedang mengetik desimal.
-    // HANYA update layar jika ada perubahan data asli dari luar komponen 
-    // (misal: tombol reset diklik, atau data API selesai dimuat)
-    if (currentParsed !== value) {
-      setDisplayValue(formatToIndonesian(value));
-    }
-  }, [value]); // Menghapus displayValue dari depedency mencegah infinite loop
+    const current = parseDisplay(displayValue);
+    const incoming = isBlank(value) ? null : Number(value);
+    // Update layar hanya jika nilai asli berbeda (bukan sekadar beda tipe string/number)
+    if (current !== incoming) setDisplayValue(formatToIndonesian(value));
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let raw = e.target.value;
-    
-    // Hanya perbolehkan angka dan koma
-    raw = raw.replace(/[^0-9,]/g, '');
-    
-    // Cegah koma berlebih
+    let raw = e.target.value.replace(/[^0-9,]/g, '');
+
     const parts = raw.split(',');
-    if (parts.length > 2) {
-      raw = parts[0] + ',' + parts.slice(1).join('');
-    }
+    if (parts.length > 2) raw = parts[0] + ',' + parts.slice(1).join('');
 
-    // [PERBAIKAN] Auto-format titik ribuan secara real-time saat user mengetik
     const finalParts = raw.split(',');
-    finalParts[0] = finalParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    const formattedRaw = finalParts.join(',');
+    finalParts[0] = finalParts[0].replace(/\./g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const formatted = finalParts.join(',');
 
-    setDisplayValue(formattedRaw);
-
-    if (formattedRaw === '') {
-      onValueChange(0);
-      return;
-    }
-
-    // Ubah ke format standard javascript number saat dikembalikan ke Parent
-    const numericString = formattedRaw.replace(/\./g, '').replace(/,/g, '.');
-    const parsed = parseFloat(numericString);
-    onValueChange(isNaN(parsed) ? 0 : parsed);
+    setDisplayValue(formatted);
+    onValueChange(parseDisplay(formatted)); // '' -> null, "0" -> 0
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Saat blur, rapikan input jika ada koma gantung (misal: "1.000," menjadi "1.000")
-    setDisplayValue(formatToIndonesian(value));
-    
-    // Jangan lupa teruskan event onBlur bawaan jika dikirim dari parent
-    if (props.onBlur) props.onBlur(e); 
+    setDisplayValue(formatToIndonesian(value)); // rapikan koma gantung, 0 tetap "0"
+    onBlur?.(e);
   };
 
   const baseClass = "w-full px-3 py-2 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-colors";
@@ -80,13 +61,13 @@ export const NumericInput: React.FC<NumericInputProps> = ({
 
   return (
     <input
+      {...props}
       type="text"
       value={displayValue}
       onChange={handleChange}
       onBlur={handleBlur}
       disabled={disabled}
       className={`${baseClass} ${errorClass} ${disabledClass} ${className || ''}`}
-      {...props}
     />
   );
 };
